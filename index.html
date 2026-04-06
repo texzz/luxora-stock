@@ -54,7 +54,6 @@
       <div class="mobile-logo">
         <img src="logo.png" alt="Luxora" />
       </div>
-      <!-- Luxora-style centered nav links -->
       <nav class="topbar-nav">
         <a class="topbar-nav-link active" onclick="switchView('add-stock', document.querySelector('[data-view=add-stock]'))">Add Stock</a>
         <a class="topbar-nav-link" onclick="switchView('add-sale', document.querySelector('[data-view=add-sale]'))">New Sale</a>
@@ -162,99 +161,114 @@
                 <div id="entryEmoji" class="entry-emoji"></div>
               </div>
               <div class="entry-meta">
-                <div class="entry-fragname" id="entryName"></div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-                  <span class="tag-gold" id="entrySize"></span>
-                  <span class="tag-neutral" id="entryCurrent"></span>
-                </div>
+                <div class="entry-name" id="entryName"></div>
+                <div class="entry-size" id="entrySize"></div>
+                <div class="entry-current" id="entryCurrent"></div>
               </div>
             </div>
             <div class="entry-right">
-              <div class="field-label">Quantity to Add</div>
+              <div class="qty-label">Quantity to Add</div>
               <div class="qty-control">
                 <button class="qty-btn" onclick="changeQty(-1)">−</button>
                 <input type="number" id="qtyInput" value="1" min="1" max="99" />
                 <button class="qty-btn" onclick="changeQty(1)">+</button>
               </div>
-              <div class="field-label" style="margin-top:12px">Note (optional)</div>
-              <input type="text" id="stockNote" class="field-input" placeholder="e.g. New batch" />
-              <button class="cta-btn" onclick="confirmAddStock()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
-                Update Stock
-              </button>
+              <input type="text" id="stockNote" class="field-input" placeholder="Note (optional)" style="margin-top:10px" />
+              <button class="cta-btn" onclick="confirmAddStock()" style="margin-top:14px;width:100%">Confirm Add →</button>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- NEW SALE -->
+      <!-- NEW SALE — multi-fragrance cart -->
       <section class="view" id="view-add-sale">
         <div class="page-header">
           <h1 class="page-title">New Sale</h1>
-          <p class="page-sub">Record a sale and auto-deduct from stock</p>
+          <p class="page-sub">Add multiple fragrances to a single invoice</p>
         </div>
-        <div class="form-grid">
-          <div class="form-card">
-            <div class="form-card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Customer Details
-            </div>
-            <div class="field-label">Sold By</div>
-            <input type="text" id="saleBy" class="field-input" placeholder="e.g. TIRTH" />
-            <div class="field-label">Customer Name *</div>
-            <input type="text" id="saleCustomer" class="field-input" placeholder="e.g. John Doe" />
-            <div class="field-label">Phone Number (WhatsApp)</div>
-            <input type="tel" id="salePhone" class="field-input" placeholder="e.g. 9856741236" maxlength="15" oninput="toggleWaNotice()" />
-            <div class="wa-notice" id="waNotice" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg>
-              WhatsApp order confirmation will be sent on recording
-            </div>
-            <div class="field-label">Sale Date</div>
-            <input type="date" id="saleDate" class="field-input" />
-            <div class="field-label">Payment Method</div>
-            <select id="salePayment" class="field-input">
-              <option>PAID/SBI</option>
-              <option>PAID/CASH</option>
-              <option>PENDING</option>
-              <option>PERSONAL</option>
-            </select>
-            <div class="field-label">Note</div>
-            <input type="text" id="saleNote" class="field-input" placeholder="Optional note" />
+
+        <!-- Customer info -->
+        <div class="form-card" style="margin-bottom:16px">
+          <div class="form-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Customer Details
           </div>
-          <div class="form-card">
-            <div class="form-card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-              Product Details
-            </div>
-            <div class="field-label">Fragrance *</div>
-            <select id="saleFragrance" class="field-input" onchange="updateSalePreview()">
-              <option value="">— Select Fragrance —</option>
-            </select>
-            <div class="field-label">Size *</div>
-            <div class="pill-row">
-              <button class="size-pill" data-sz="20" onclick="selectSalePill(this)">20 ml</button>
-              <button class="size-pill" data-sz="30" onclick="selectSalePill(this)">30 ml</button>
-              <button class="size-pill" data-sz="50" onclick="selectSalePill(this)">50 ml</button>
-              <button class="size-pill" data-sz="100" onclick="selectSalePill(this)">100 ml</button>
-            </div>
-            <div class="field-label">Quantity</div>
-            <div class="qty-control">
-              <button class="qty-btn" onclick="changeSaleQty(-1)">−</button>
-              <input type="number" id="saleQty" value="1" min="1" oninput="updateSaleSummary()" />
-              <button class="qty-btn" onclick="changeSaleQty(1)">+</button>
-            </div>
-            <div class="field-label" style="margin-top:12px">Price per bottle (₹)</div>
-            <input type="number" id="salePrice" class="field-input" placeholder="e.g. 650" oninput="updateSaleSummary()" />
-            <div class="stock-preview-box" id="saleStockPreview" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-              Current Stock: <strong id="saleStockVal">—</strong>
-            </div>
+          <div class="field-label">Sold By</div>
+          <input type="text" id="saleBy" class="field-input" placeholder="Your name" />
+          <div class="field-label">Customer Name *</div>
+          <input type="text" id="saleCustomer" class="field-input" placeholder="e.g. John Doe" />
+          <div class="field-label">Phone Number (WhatsApp)</div>
+          <input type="tel" id="salePhone" class="field-input" placeholder="e.g. 9856741236" maxlength="15" oninput="toggleWaNotice()" />
+          <div class="wa-notice" id="waNotice" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg>
+            WhatsApp order confirmation will be sent on recording
           </div>
+          <div class="field-label">Sale Date</div>
+          <input type="date" id="saleDate" class="field-input" />
+          <div class="field-label">Payment Method</div>
+          <select id="salePayment" class="field-input">
+            <option>PAID/SBI</option>
+            <option>PAID/CASH</option>
+            <option>PENDING</option>
+            <option>PERSONAL</option>
+          </select>
+          <div class="field-label">Note</div>
+          <input type="text" id="saleNote" class="field-input" placeholder="Optional note" />
         </div>
+
+        <!-- Add fragrance item -->
+        <div class="form-card" style="margin-bottom:16px">
+          <div class="form-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Add Fragrance to Cart
+          </div>
+          <div class="field-label">Fragrance *</div>
+          <select id="saleFragrance" class="field-input" onchange="updateSalePreview()">
+            <option value="">— Select Fragrance —</option>
+          </select>
+          <div class="field-label">Size *</div>
+          <div class="pill-row">
+            <button class="size-pill" data-sz="20" onclick="selectSalePill(this)">20 ml</button>
+            <button class="size-pill" data-sz="30" onclick="selectSalePill(this)">30 ml</button>
+            <button class="size-pill" data-sz="50" onclick="selectSalePill(this)">50 ml</button>
+            <button class="size-pill" data-sz="100" onclick="selectSalePill(this)">100 ml</button>
+          </div>
+          <div class="field-label">Quantity</div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeSaleQty(-1)">−</button>
+            <input type="number" id="saleQty" value="1" min="1" oninput="updateSaleSummary()" />
+            <button class="qty-btn" onclick="changeSaleQty(1)">+</button>
+          </div>
+          <div class="field-label" style="margin-top:12px">Price per bottle (₹)</div>
+          <input type="number" id="salePrice" class="field-input" placeholder="e.g. 650" oninput="updateSaleSummary()" />
+          <div class="stock-preview-box" id="saleStockPreview" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            Current Stock: <strong id="saleStockVal">—</strong>
+          </div>
+
+          <!-- Add to cart button -->
+          <button class="add-to-cart-btn" onclick="addToCart()" style="margin-top:14px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+            Add Another Fragrance
+          </button>
+        </div>
+
+        <!-- Cart / Items List -->
+        <div id="cartSection" style="display:none;margin-bottom:16px">
+          <div class="cart-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Cart Items
+            <span class="cart-count" id="cartCount">0</span>
+          </div>
+          <div id="cartItems"></div>
+        </div>
+
+        <!-- Invoice total bar -->
         <div class="sale-total-bar" id="saleTotalBar" style="display:none">
           <span>Invoice Total</span>
           <strong id="summaryTotal">₹0</strong>
         </div>
+
         <button class="cta-btn cta-wide" onclick="confirmSale()">Record Sale →</button>
       </section>
 
@@ -272,9 +286,11 @@
         </div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr>
-              <th>Fragrance</th><th>20ml</th><th>30ml</th><th>50ml</th><th>100ml</th><th>Total</th><th>Status</th>
-            </tr></thead>
+            <thead>
+              <tr>
+                <th>Fragrance</th><th>20ml</th><th>30ml</th><th>50ml</th><th>100ml</th><th>Total</th><th>Status</th>
+              </tr>
+            </thead>
             <tbody id="stockTbody"></tbody>
           </table>
         </div>
@@ -308,9 +324,11 @@
         </div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr>
-              <th>#</th><th>By</th><th>Customer</th><th>Date</th><th>Product</th><th>ML</th><th>Qty</th><th>Price</th><th>Total</th><th>Payment</th><th>Note</th><th></th>
-            </tr></thead>
+            <thead>
+              <tr>
+                <th>#</th><th>By</th><th>Customer</th><th>Date</th><th>Product</th><th>ML</th><th>Qty</th><th>Price</th><th>Total</th><th>Payment</th><th>Note</th><th></th>
+              </tr>
+            </thead>
             <tbody id="custTbody"></tbody>
           </table>
         </div>
@@ -320,6 +338,39 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAjHICZRFt1lsLiTkdnjICu2xZ9TDcHfMg",
+      authDomain: "luxora-stock.firebaseapp.com",
+      projectId: "luxora-stock",
+      storageBucket: "luxora-stock.firebasestorage.app",
+      messagingSenderId: "1011994359479",
+      appId: "1:1011994359479:web:a19f2b68e0e59ab2953f32",
+      measurementId: "G-9MEZJCLML2"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    
+    window.firebaseDB = db;
+    window.firebaseCollection = collection;
+    window.firebaseGetDocs = getDocs;
+    window.firebaseDoc = doc;
+    window.firebaseSetDoc = setDoc;
+    window.firebaseDeleteDoc = deleteDoc;
+    window.firebaseAddDoc = addDoc;
+    window.firebaseOnSnapshot = onSnapshot;
+    window.firebaseQuery = query;
+    window.firebaseOrderBy = orderBy;
+    window.firebaseInitialized = true;
+  </script>
   <script src="script.js"></script>
 </body>
 </html>
