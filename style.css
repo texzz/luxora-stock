@@ -657,3 +657,113 @@ input[type=number]::-webkit-outer-spin-button { opacity: 0.3; }
   border-color: rgba(217,79,79,0.22);
   color: var(--red);
 }
+/* ── EDIT SALE BUTTON ── */
+.edit-sale-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 8px; cursor: pointer;
+  color: var(--text3); transition: all var(--transition);
+  padding: 0; margin-right: 2px;
+}
+.edit-sale-btn svg { width: 13px; height: 13px; pointer-events: none; }
+.edit-sale-btn:hover {
+  background: rgba(180,150,80,0.12);
+  border-color: rgba(180,150,80,0.25);
+  color: var(--gold);
+}
+
+/* ── EDIT SALE MODAL ── */
+.edit-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+.edit-modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+.edit-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-serif); font-size: 1.05rem;
+  color: var(--text1); letter-spacing: 0.02em;
+}
+.edit-modal-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-size: 1rem; padding: 4px 6px;
+  border-radius: 6px; transition: all var(--transition);
+}
+.edit-modal-close:hover { background: var(--surface2); color: var(--text1); }
+.edit-modal-body {
+  padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 65vh; overflow-y: auto;
+}
+.edit-row {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.edit-row label {
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--text3); text-transform: uppercase;
+}
+.edit-modal-footer {
+  display: flex; gap: 10px; padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.edit-cancel-btn {
+  flex: 1; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text2); cursor: pointer; font-size: 0.88rem;
+  transition: all var(--transition);
+}
+.edit-cancel-btn:hover { background: var(--surface2); }
+.edit-save-btn {
+  flex: 2; padding: 10px; border-radius: 10px;
+  border: none; background: var(--gold);
+  color: #1a1208; font-weight: 600; cursor: pointer;
+  font-size: 0.88rem; transition: all var(--transition);
+}
+.edit-save-btn:hover { opacity: 0.88; }
+
+/* ── MONTH FILTER & TOOLBAR ── */
+.month-filter-select {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text1);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+  min-width: 140px;
+}
+.month-filter-select:focus { border-color: var(--gold); }
+
+.cust-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 0 0 12px 0;
+  flex-wrap: wrap;
+}
+.toolbar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 10px;
+  font-size: 0.8rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text2);
+  transition: all var(--transition);
+}
+.toolbar-btn:hover { background: var(--surface); color: var(--text1); }
+.refresh-btn:hover { border-color: rgba(180,150,80,0.4); color: var(--gold); }
+.clear-btn:hover   { border-color: rgba(217,79,79,0.3); color: var(--red); }
