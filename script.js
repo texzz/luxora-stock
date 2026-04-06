@@ -647,7 +647,8 @@ function renderCustomerTable() {
       : "—";
 
     const isPersonal = (iv.note||"").includes("PERSONAL") || (iv.payment||"").includes("PERSONAL");
-    const payClass = !iv.payment ? "pending" : isPersonal ? "personal" : "paid";
+    const isPending  = !iv.payment || iv.payment.toUpperCase() === "PENDING";
+    const payClass   = isPending ? "pending" : isPersonal ? "personal" : "paid";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
