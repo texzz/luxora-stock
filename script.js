@@ -141,7 +141,7 @@ function getEmoji(name) {
   return FRAG_EMOJIS.default;
 }
 function getFragImg(name) {
-  return FRAG_IMAGES[name] ? `assets/fragrances/${FRAG_IMAGES[name]}` : null;
+  return FRAG_IMAGES[name] ? FRAG_IMAGES[name] : null;
 }
 
 /* ── CACHE ── */
@@ -501,15 +501,15 @@ function confirmSale() {
 
 Your order has been placed successfully! Here are your order details:
 
-Product: ${product}
-Size: ${ml}ml
-Quantity: ${qty}
-Price per bottle: ₹${price.toLocaleString("en-IN")}
-Total Amount: ₹${total.toLocaleString("en-IN")}
-Date: ${dateStr}
-Payment: ${payment}
-Invoice #: ${inv.invoiceNo}
-${note ? `Note: ${note}` : ""}
+*Product:* ${product}
+*Size:* ${ml}ml
+*Quantity:* ${qty}
+*Price per bottle:* ₹${price.toLocaleString("en-IN")}
+*Total Amount:* ₹${total.toLocaleString("en-IN")}
+*Date:* ${dateStr}
+*Payment:* ${payment}
+*Invoice #:* ${inv.invoiceNo}
+${note ? `*Note:* ${note}` : ""}
 To confirm your order, please reply with *YES*.
 
 Thank you for choosing *Luxora*`;
