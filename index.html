@@ -284,14 +284,27 @@
       <section class="view" id="view-customer-list">
         <div class="page-header">
           <h1 class="page-title">Customer List</h1>
-          <p class="page-sub">All recorded sales & invoices</p>
+          <p class="page-sub">All recorded sales &amp; invoices</p>
         </div>
         <div class="search-row">
           <div class="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input type="text" id="custSearch" placeholder="Search customer, product, or seller…" oninput="renderCustomerTable()" />
           </div>
+          <select id="custMonthFilter" class="month-filter-select" onchange="renderCustomerTable()">
+            <option value="">All Months</option>
+          </select>
           <div class="revenue-chip" id="revChip"></div>
+        </div>
+        <div class="cust-toolbar">
+          <button class="toolbar-btn refresh-btn" onclick="manualRefresh()" title="Refresh data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+          <button class="toolbar-btn clear-btn" onclick="clearCache()" title="Clear browser cache">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Clear &amp; Reset
+          </button>
         </div>
         <div class="table-wrap">
           <table class="data-table">
