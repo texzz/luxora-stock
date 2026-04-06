@@ -39,6 +39,7 @@ function attemptLogin() {
   sessionStorage.setItem("luxora_user", email);
   errEl.textContent = "";
   showApp();
+  startAutoRefresh();
 }
 
 function showApp() {
@@ -53,6 +54,7 @@ function showApp() {
   renderStats();
   renderFragGrid();
   renderStockTable();
+  populateMonthFilter();
   renderCustomerTable();
   populateSaleFragSelect();
   setDefaultDate();
@@ -79,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (saved && ALLOWED_USERS[saved]) {
     currentUser = saved;
     showApp();
+    startAutoRefresh();
   }
   /* Enter key on login */
   document.getElementById("loginPassword").addEventListener("keydown", e => {
@@ -280,22 +283,22 @@ function defaultInvoices() {
     {by:"MUTUAL", invoiceNo:74, customer:"KRISHNA PATHAK", date:"2026-03-13", product:"HAWAS ICE / FOREST AQUA", ml:100, qty:1, price:750, total:750, payment:"PAID/SBI", note:""},
     {by:"MUTUAL", invoiceNo:75, customer:"KRISHNA PATHAK", date:"2026-03-13", product:"COOL WATER", ml:20, qty:1, price:200, total:200, payment:"PAID/SBI", note:""},
     {by:"TIRTH", invoiceNo:76, customer:"NILESH PATEL", date:"2026-03-13", product:"TOMFORD TOBACCO VANILLA", ml:20, qty:1, price:350, total:350, payment:"PAID/SBI", note:""},
-    {by:"TIRTH", invoiceNo:77, customer:"HARSHAD", date:"2026-03-13", product:"CHOCOLATE MUSK", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
-    {by:"DHRUV", invoiceNo:78, customer:"MONICA", date:"2026-03-13", product:"MOST WANTED", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
-    {by:"DHRUV", invoiceNo:79, customer:"MONICA", date:"2026-03-16", product:"LV IMAGINATION", ml:20, qty:1, price:250, total:250, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:80, customer:"HARSH", date:"2026-03-16", product:"MOST WANTED", ml:20, qty:1, price:300, total:300, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:81, customer:"HARSH", date:"2026-03-16", product:"DUNHILL RED", ml:30, qty:1, price:350, total:350, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:82, customer:"HARSH", date:"2026-03-16", product:"COOL WATER WOMEN", ml:30, qty:1, price:350, total:350, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:83, customer:"GAUTAM AHM", date:"2026-03-16", product:"COOL WATER", ml:30, qty:1, price:350, total:350, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:84, customer:"GAUTAM AHM", date:"2026-03-16", product:"ARABIAN WOODY", ml:30, qty:1, price:400, total:400, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:85, customer:"GAUTAM AHM", date:"2026-03-16", product:"COOL WATER WOMEN", ml:20, qty:1, price:250, total:250, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:86, customer:"GAUTAM AHM", date:"2026-03-16", product:"MOST WANTED", ml:20, qty:1, price:300, total:300, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:87, customer:"KRISH", date:"2026-03-22", product:"CHOCOLATE MUSK", ml:50, qty:1, price:500, total:500, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:88, customer:"ARVIND", date:"2026-03-22", product:"LACOSTE", ml:30, qty:1, price:350, total:350, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:89, customer:"SANDEEP", date:"2026-03-24", product:"LACOSTE", ml:50, qty:1, price:650, total:650, payment:"", note:""},
-    {by:"TIRTH", invoiceNo:90, customer:"SANDEEP", date:"2026-03-24", product:"RASSASI HAWAS", ml:30, qty:1, price:350, total:350, payment:"", note:""},
-    {by:"DHRUV", invoiceNo:91, customer:"DHRUV", date:"2026-03-17", product:"GUCCI FLORA", ml:30, qty:1, price:300, total:300, payment:"", note:""},
-    {by:"DHRUV", invoiceNo:92, customer:"MONICA", date:"2026-04-01", product:"ELEXIR", ml:50, qty:1, price:500, total:500, payment:"", note:""},
+    {by:"", invoiceNo:77, customer:"HARSHAD", date:"2026-03-13", product:"CHOCOLATE MUSK", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
+    {by:"", invoiceNo:78, customer:"MONICA", date:"2026-03-13", product:"MOST WANTED", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
+    {by:"", invoiceNo:79, customer:"MONICA", date:"2026-03-16", product:"LV IMAGINATION", ml:20, qty:1, price:250, total:250, payment:"", note:""},
+    {by:"", invoiceNo:80, customer:"HARSH", date:"2026-03-16", product:"MOST WANTED", ml:20, qty:1, price:300, total:300, payment:"", note:""},
+    {by:"", invoiceNo:81, customer:"HARSH", date:"2026-03-16", product:"DUNHILL RED", ml:30, qty:1, price:350, total:350, payment:"", note:""},
+    {by:"", invoiceNo:82, customer:"HARSH", date:"2026-03-16", product:"COOL WATER WOMEN", ml:30, qty:1, price:350, total:350, payment:"", note:""},
+    {by:"", invoiceNo:83, customer:"GAUTAM AHM", date:"2026-03-16", product:"COOL WATER", ml:30, qty:1, price:350, total:350, payment:"", note:""},
+    {by:"", invoiceNo:84, customer:"GAUTAM AHM", date:"2026-03-16", product:"ARABIAN WOODY", ml:30, qty:1, price:400, total:400, payment:"", note:""},
+    {by:"", invoiceNo:85, customer:"GAUTAM AHM", date:"2026-03-16", product:"COOL WATER WOMEN", ml:20, qty:1, price:250, total:250, payment:"", note:""},
+    {by:"", invoiceNo:86, customer:"GAUTAM AHM", date:"2026-03-16", product:"MOST WANTED", ml:20, qty:1, price:300, total:300, payment:"", note:""},
+    {by:"", invoiceNo:87, customer:"KRISH", date:"2026-03-22", product:"CHOCOLATE MUSK", ml:50, qty:1, price:500, total:500, payment:"", note:""},
+    {by:"", invoiceNo:88, customer:"ARVIND", date:"2026-03-22", product:"LACOSTE", ml:30, qty:1, price:350, total:350, payment:"", note:""},
+    {by:"", invoiceNo:89, customer:"SANDEEP", date:"2026-03-24", product:"LACOSTE", ml:50, qty:1, price:650, total:650, payment:"", note:""},
+    {by:"", invoiceNo:90, customer:"SANDEEP", date:"2026-03-24", product:"RASSASI HAWAS", ml:30, qty:1, price:350, total:350, payment:"", note:""},
+    {by:"", invoiceNo:91, customer:"DHRUV", date:"2026-03-17", product:"GUCCI FLORA", ml:30, qty:1, price:300, total:300, payment:"", note:""},
+    {by:"", invoiceNo:92, customer:"MONICA", date:"2026-04-01", product:"ELEXIR", ml:50, qty:1, price:500, total:500, payment:"", note:""},
   ];
 }
 
@@ -594,16 +597,45 @@ function renderStockTable() {
 }
 
 /* ════ CUSTOMER TABLE ════ */
+function populateMonthFilter() {
+  const sel = document.getElementById("custMonthFilter");
+  if (!sel) return;
+  // Collect unique year-month values from invoices
+  const months = [...new Set(
+    invoices
+      .filter(iv => iv.date)
+      .map(iv => iv.date.slice(0,7))   // "2026-03"
+  )].sort().reverse();
+
+  // Rebuild options keeping "All Months" first
+  sel.innerHTML = '<option value="">All Months</option>';
+  months.forEach(ym => {
+    const [y, m] = ym.split("-");
+    const label = new Date(y, m-1, 1).toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+    const opt = document.createElement("option");
+    opt.value = ym;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  });
+
+  // Default to current month if present
+  const nowYM = new Date().toISOString().slice(0,7);
+  if (months.includes(nowYM)) sel.value = nowYM;
+}
+
 function renderCustomerTable() {
-  const q = (document.getElementById("custSearch")?.value || "").toLowerCase();
+  const q     = (document.getElementById("custSearch")?.value || "").toLowerCase();
+  const month = document.getElementById("custMonthFilter")?.value || "";
   const tbody = document.getElementById("custTbody");
   tbody.innerHTML = "";
 
-  const filtered = invoices.filter(iv =>
-    (iv.customer||"").toLowerCase().includes(q) ||
-    (iv.product||"").toLowerCase().includes(q) ||
-    (iv.by||"").toLowerCase().includes(q)
-  );
+  const filtered = invoices.filter(iv => {
+    const matchQ = (iv.customer||"").toLowerCase().includes(q) ||
+                   (iv.product||"").toLowerCase().includes(q) ||
+                   (iv.by||"").toLowerCase().includes(q);
+    const matchM = !month || (iv.date && iv.date.startsWith(month));
+    return matchQ && matchM;
+  });
 
   const totalRevenue = filtered.reduce((s,iv) => s + (iv.total||0), 0);
   const chip = document.getElementById("revChip");
@@ -805,6 +837,45 @@ function saveEditModal(invoiceNo) {
   renderStats();
   closeEditModal();
   showToast(`Invoice #${invoiceNo} updated`, "success");
+}
+
+/* ════ REFRESH & CACHE ════ */
+let _autoRefreshTimer = null;
+
+function manualRefresh() {
+  loadFromCache();
+  populateMonthFilter();
+  renderStats();
+  renderFragGrid();
+  renderStockTable();
+  renderCustomerTable();
+  populateSaleFragSelect();
+  showToast("Data refreshed", "success");
+}
+
+function startAutoRefresh() {
+  if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
+  _autoRefreshTimer = setInterval(() => {
+    loadFromCache();
+    renderStats();
+    renderStockTable();
+    renderCustomerTable();
+  }, 30000); // every 30 seconds
+}
+
+function clearCache() {
+  if (!confirm("This will reset ALL data (stock & sales) back to defaults. Are you sure?")) return;
+  localStorage.removeItem("luxora_frags");
+  localStorage.removeItem("luxora_invs");
+  localStorage.removeItem("luxora_next");
+  loadFromCache();
+  populateMonthFilter();
+  renderStats();
+  renderFragGrid();
+  renderStockTable();
+  renderCustomerTable();
+  populateSaleFragSelect();
+  showToast("Cache cleared — data reset to defaults", "success");
 }
 
 /* ════ TOAST ════ */
