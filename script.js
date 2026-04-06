@@ -157,8 +157,17 @@ function loadFromCache() {
   if (f)  fragrances = JSON.parse(f);
   if (iv) invoices   = JSON.parse(iv);
   if (ni) nextInvoice = parseInt(ni);
-  if (!f || !fragrances.length) fragrances = defaultFragrances();
-  if (!iv || !invoices.length) { invoices = defaultInvoices(); nextInvoice = invoices.length + 1; }
+  // First-ever load: seed defaults then immediately save to localStorage
+  if (!f || !fragrances.length) {
+    fragrances = defaultFragrances();
+    localStorage.setItem("luxora_frags", JSON.stringify(fragrances));
+  }
+  if (!iv || !invoices.length) {
+    invoices = defaultInvoices();
+    nextInvoice = invoices.length + 1;
+    localStorage.setItem("luxora_invs", JSON.stringify(invoices));
+    localStorage.setItem("luxora_next", nextInvoice);
+  }
 }
 
 /* ── DEFAULT DATA ── */
@@ -272,7 +281,7 @@ function defaultInvoices() {
     {by:"MUTUAL", invoiceNo:75, customer:"KRISHNA PATHAK", date:"2026-03-13", product:"COOL WATER", ml:20, qty:1, price:200, total:200, payment:"PAID/SBI", note:""},
     {by:"TIRTH", invoiceNo:76, customer:"NILESH PATEL", date:"2026-03-13", product:"TOMFORD TOBACCO VANILLA", ml:20, qty:1, price:350, total:350, payment:"PAID/SBI", note:""},
     {by:"TIRTH", invoiceNo:77, customer:"HARSHAD", date:"2026-03-13", product:"CHOCOLATE MUSK", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
-    {by:"TIRTH", invoiceNo:78, customer:"MONICA", date:"2026-03-13", product:"MOST WANTED", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
+    {by:"DHRUV", invoiceNo:78, customer:"MONICA", date:"2026-03-13", product:"MOST WANTED", ml:20, qty:1, price:250, total:250, payment:"PAID/SBI", note:""},
     {by:"DHRUV", invoiceNo:79, customer:"MONICA", date:"2026-03-16", product:"LV IMAGINATION", ml:20, qty:1, price:250, total:250, payment:"", note:""},
     {by:"TIRTH", invoiceNo:80, customer:"HARSH", date:"2026-03-16", product:"MOST WANTED", ml:20, qty:1, price:300, total:300, payment:"", note:""},
     {by:"TIRTH", invoiceNo:81, customer:"HARSH", date:"2026-03-16", product:"DUNHILL RED", ml:30, qty:1, price:350, total:350, payment:"", note:""},
@@ -621,7 +630,10 @@ function renderCustomerTable() {
       <td class="col-total">₹${(iv.total||0).toLocaleString("en-IN")}</td>
       <td><span class="pay-tag ${payClass}">${iv.payment || "PENDING"}</span></td>
       <td style="color:var(--text3);font-size:0.78rem">${iv.note || ""}</td>
-      <td>
+      <td style="white-space:nowrap">
+        <button class="edit-sale-btn" onclick="openEditModal(${iv.invoiceNo})" title="Edit this sale">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
         <button class="delete-sale-btn" onclick="deleteSale(${iv.invoiceNo})" title="Delete this sale">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         </button>
@@ -699,6 +711,100 @@ function deleteSale(invoiceNo) {
   renderCustomerTable();
   renderFragGrid();
   showToast(`Invoice #${invoiceNo} deleted & stock restored`, "success");
+}
+
+/* ════ EDIT SALE MODAL ════ */
+function openEditModal(invoiceNo) {
+  const iv = invoices.find(i => i.invoiceNo === invoiceNo);
+  if (!iv) return;
+
+  // Remove existing modal if any
+  const existing = document.getElementById("editModal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "editModal";
+  modal.className = "edit-modal-overlay";
+  modal.innerHTML = `
+    <div class="edit-modal-card">
+      <div class="edit-modal-header">
+        <span>Edit Invoice #${iv.invoiceNo}</span>
+        <button class="edit-modal-close" onclick="closeEditModal()">✕</button>
+      </div>
+      <div class="edit-modal-body">
+        <div class="edit-row">
+          <label>Customer</label>
+          <input id="em_customer" class="field-input" value="${iv.customer||''}" />
+        </div>
+        <div class="edit-row">
+          <label>Sold By</label>
+          <input id="em_by" class="field-input" value="${iv.by||''}" />
+        </div>
+        <div class="edit-row">
+          <label>Date</label>
+          <input id="em_date" type="date" class="field-input" value="${iv.date||''}" />
+        </div>
+        <div class="edit-row">
+          <label>Price per bottle (₹)</label>
+          <input id="em_price" type="number" class="field-input" value="${iv.price||0}" />
+        </div>
+        <div class="edit-row">
+          <label>Quantity</label>
+          <input id="em_qty" type="number" class="field-input" value="${iv.qty||1}" min="1" />
+        </div>
+        <div class="edit-row">
+          <label>Payment</label>
+          <select id="em_payment" class="field-input">
+            <option ${iv.payment==='PAID/SBI'?'selected':''}>PAID/SBI</option>
+            <option ${iv.payment==='PAID/CASH'?'selected':''}>PAID/CASH</option>
+            <option ${iv.payment==='PENDING'?'selected':''}>PENDING</option>
+            <option ${iv.payment==='PERSONAL'?'selected':''}>PERSONAL</option>
+            <option ${!iv.payment?'selected':''} value=""></option>
+          </select>
+        </div>
+        <div class="edit-row">
+          <label>Note</label>
+          <input id="em_note" class="field-input" value="${iv.note||''}" />
+        </div>
+      </div>
+      <div class="edit-modal-footer">
+        <button class="edit-cancel-btn" onclick="closeEditModal()">Cancel</button>
+        <button class="edit-save-btn" onclick="saveEditModal(${iv.invoiceNo})">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  // Close on backdrop click
+  modal.addEventListener("click", e => { if (e.target === modal) closeEditModal(); });
+}
+
+function closeEditModal() {
+  const modal = document.getElementById("editModal");
+  if (modal) modal.remove();
+}
+
+function saveEditModal(invoiceNo) {
+  const idx = invoices.findIndex(i => i.invoiceNo === invoiceNo);
+  if (idx === -1) return;
+
+  const iv = invoices[idx];
+  const newPrice = parseFloat(document.getElementById("em_price").value) || 0;
+  const newQty   = parseInt(document.getElementById("em_qty").value) || 1;
+
+  iv.customer = document.getElementById("em_customer").value.trim().toUpperCase();
+  iv.by       = document.getElementById("em_by").value.trim().toUpperCase();
+  iv.date     = document.getElementById("em_date").value;
+  iv.price    = newPrice;
+  iv.qty      = newQty;
+  iv.total    = Math.round(newPrice * newQty);
+  iv.payment  = document.getElementById("em_payment").value;
+  iv.note     = document.getElementById("em_note").value.trim().toUpperCase();
+
+  saveToCache();
+  renderCustomerTable();
+  renderStats();
+  closeEditModal();
+  showToast(`Invoice #${invoiceNo} updated`, "success");
 }
 
 /* ════ TOAST ════ */
