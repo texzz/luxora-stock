@@ -226,7 +226,7 @@ const FRAG_IMAGES = {
   "ELEXIR":          "elixer-1.png",
   "MIX FRUIT":       "mix-fruit-1.png",
   "MOST WANTED":     "most-wanted-1.png",
-  "LATAFA YARA":     "yara-1.png",
+  "YARA":            "yara-1.png",
   "LACOSTE":         "lacoste-1.png",
   "CREED AVENTUS":   "creed-aventus-1.png",
   "RASSASI HAWAS":   "r-hawas-1.png",
