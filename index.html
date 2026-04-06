@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Luxora Stock</title>
+  <link rel="icon" href="assets/icon.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=Cinzel:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-bg">
+      <div class="login-orb orb1"></div>
+      <div class="login-orb orb2"></div>
+      <div class="login-orb orb3"></div>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="https://luxoraperfume.com/assets/logo.png" alt="Luxora" />
+      </div>
+      <h2 class="login-title">Welcome Back</h2>
+      <p class="login-sub">Sign in to access your stock portal</p>
+      <div class="login-form">
+        <div class="input-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" class="login-input" placeholder="your@email.com" />
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPassword" class="login-input" placeholder="Enter password" />
+            <button class="pw-toggle" onclick="togglePw()" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="login-error" id="loginError"></div>
+        <button class="login-btn" onclick="attemptLogin()">Sign In</button>
+      </div>
+      <p class="login-note">Access restricted to authorized partners only</p>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="app" style="display:none">
+    <header class="mobile-topbar">
+      <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="mobile-logo">
+        <img src="https://luxoraperfume.com/assets/logo.png" alt="Luxora" />
+      </div>
+      <!-- Luxora-style centered nav links -->
+      <nav class="topbar-nav">
+        <a class="topbar-nav-link active" onclick="switchView('add-stock', document.querySelector('[data-view=add-stock]'))">Add Stock</a>
+        <a class="topbar-nav-link" onclick="switchView('add-sale', document.querySelector('[data-view=add-sale]'))">New Sale</a>
+        <a class="topbar-nav-link" onclick="switchView('stock-list', document.querySelector('[data-view=stock-list]'))">Stock List</a>
+        <a class="topbar-nav-link" onclick="switchView('customer-list', document.querySelector('[data-view=customer-list]'))">Customers</a>
+      </nav>
+      <button class="mobile-user-btn" onclick="logout()" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="https://luxoraperfume.com/assets/logo.png" alt="Luxora" />
+          <div>
+            <div class="sidebar-brand">LUXORA</div>
+            <div class="sidebar-sub">Stock</div>
+          </div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+      </div>
+
+      <div class="sidebar-stats">
+        <div class="ss-item">
+          <span class="ss-val" id="statTotal">—</span>
+          <span class="ss-label">Bottles</span>
+        </div>
+        <div class="ss-divider"></div>
+        <div class="ss-item">
+          <span class="ss-val" id="statFrags">—</span>
+          <span class="ss-label">Fragrances</span>
+        </div>
+        <div class="ss-divider"></div>
+        <div class="ss-item">
+          <span class="ss-val" id="statSales">—</span>
+          <span class="ss-label">Sales</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-label">INVENTORY</div>
+        <a class="nav-item active" data-view="add-stock" onclick="switchView('add-stock',this)">
+          <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          Add Stock
+        </a>
+        <a class="nav-item" data-view="add-sale" onclick="switchView('add-sale',this)">
+          <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          New Sale
+        </a>
+        <div class="nav-group-label">REPORTS</div>
+        <a class="nav-item" data-view="stock-list" onclick="switchView('stock-list',this)">
+          <div class="nav-icon-wrap">
+            <img src="assets/stock-icon.png" alt="" />
+          </div>
+          Stock List
+        </a>
+        <a class="nav-item" data-view="customer-list" onclick="switchView('customer-list',this)">
+          <div class="nav-icon-wrap">
+            <img src="assets/customer-icon.png" alt="" />
+          </div>
+          Customer List
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-info" id="sidebarUser"></div>
+        <button class="export-btn" onclick="exportAllExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export Excel
+        </button>
+        <button class="logout-btn" onclick="logout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- ADD STOCK -->
+      <section class="view active" id="view-add-stock">
+        <div class="page-header">
+          <h1 class="page-title">Add Stock</h1>
+          <p class="page-sub">Select a fragrance and size to update inventory</p>
+        </div>
+        <div class="size-selector">
+          <button class="size-chip active" data-size="20" onclick="selectSize(this)">20 ml</button>
+          <button class="size-chip" data-size="30" onclick="selectSize(this)">30 ml</button>
+          <button class="size-chip" data-size="50" onclick="selectSize(this)">50 ml</button>
+          <button class="size-chip" data-size="100" onclick="selectSize(this)">100 ml</button>
+        </div>
+        <div class="frag-grid" id="fragGrid"></div>
+        <div class="entry-panel" id="entryPanel" style="display:none">
+          <div class="entry-panel-inner">
+            <div class="entry-left">
+              <div class="entry-img-box">
+                <img id="entryImg" src="" alt="" />
+                <div id="entryEmoji" class="entry-emoji"></div>
+              </div>
+              <div class="entry-meta">
+                <div class="entry-fragname" id="entryName"></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+                  <span class="tag-gold" id="entrySize"></span>
+                  <span class="tag-neutral" id="entryCurrent"></span>
+                </div>
+              </div>
+            </div>
+            <div class="entry-right">
+              <div class="field-label">Quantity to Add</div>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                <input type="number" id="qtyInput" value="1" min="1" max="99" />
+                <button class="qty-btn" onclick="changeQty(1)">+</button>
+              </div>
+              <div class="field-label" style="margin-top:12px">Note (optional)</div>
+              <input type="text" id="stockNote" class="field-input" placeholder="e.g. New batch" />
+              <button class="cta-btn" onclick="confirmAddStock()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                Update Stock
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NEW SALE -->
+      <section class="view" id="view-add-sale">
+        <div class="page-header">
+          <h1 class="page-title">New Sale</h1>
+          <p class="page-sub">Record a sale and auto-deduct from stock</p>
+        </div>
+        <div class="form-grid">
+          <div class="form-card">
+            <div class="form-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Customer Details
+            </div>
+            <div class="field-label">Sold By</div>
+            <input type="text" id="saleBy" class="field-input" placeholder="e.g. TIRTH" />
+            <div class="field-label">Customer Name *</div>
+            <input type="text" id="saleCustomer" class="field-input" placeholder="e.g. John Doe" />
+            <div class="field-label">Phone Number (WhatsApp)</div>
+            <input type="tel" id="salePhone" class="field-input" placeholder="e.g. 9856741236" maxlength="15" oninput="toggleWaNotice()" />
+            <div class="wa-notice" id="waNotice" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg>
+              WhatsApp order confirmation will be sent on recording
+            </div>
+            <div class="field-label">Sale Date</div>
+            <input type="date" id="saleDate" class="field-input" />
+            <div class="field-label">Payment Method</div>
+            <select id="salePayment" class="field-input">
+              <option>PAID/SBI</option>
+              <option>PAID/CASH</option>
+              <option>PENDING</option>
+              <option>PERSONAL</option>
+            </select>
+            <div class="field-label">Note</div>
+            <input type="text" id="saleNote" class="field-input" placeholder="Optional note" />
+          </div>
+          <div class="form-card">
+            <div class="form-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              Product Details
+            </div>
+            <div class="field-label">Fragrance *</div>
+            <select id="saleFragrance" class="field-input" onchange="updateSalePreview()">
+              <option value="">— Select Fragrance —</option>
+            </select>
+            <div class="field-label">Size *</div>
+            <div class="pill-row">
+              <button class="size-pill" data-sz="20" onclick="selectSalePill(this)">20 ml</button>
+              <button class="size-pill" data-sz="30" onclick="selectSalePill(this)">30 ml</button>
+              <button class="size-pill" data-sz="50" onclick="selectSalePill(this)">50 ml</button>
+              <button class="size-pill" data-sz="100" onclick="selectSalePill(this)">100 ml</button>
+            </div>
+            <div class="field-label">Quantity</div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeSaleQty(-1)">−</button>
+              <input type="number" id="saleQty" value="1" min="1" oninput="updateSaleSummary()" />
+              <button class="qty-btn" onclick="changeSaleQty(1)">+</button>
+            </div>
+            <div class="field-label" style="margin-top:12px">Price per bottle (₹)</div>
+            <input type="number" id="salePrice" class="field-input" placeholder="e.g. 650" oninput="updateSaleSummary()" />
+            <div class="stock-preview-box" id="saleStockPreview" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              Current Stock: <strong id="saleStockVal">—</strong>
+            </div>
+          </div>
+        </div>
+        <div class="sale-total-bar" id="saleTotalBar" style="display:none">
+          <span>Invoice Total</span>
+          <strong id="summaryTotal">₹0</strong>
+        </div>
+        <button class="cta-btn cta-wide" onclick="confirmSale()">Record Sale →</button>
+      </section>
+
+      <!-- STOCK LIST -->
+      <section class="view" id="view-stock-list">
+        <div class="page-header">
+          <h1 class="page-title">Stock List</h1>
+          <p class="page-sub">Current inventory across all sizes</p>
+        </div>
+        <div class="search-row">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="stockSearch" placeholder="Search fragrance…" oninput="renderStockTable()" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>Fragrance</th><th>20ml</th><th>30ml</th><th>50ml</th><th>100ml</th><th>Total</th><th>Status</th>
+            </tr></thead>
+            <tbody id="stockTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CUSTOMER LIST -->
+      <section class="view" id="view-customer-list">
+        <div class="page-header">
+          <h1 class="page-title">Customer List</h1>
+          <p class="page-sub">All recorded sales & invoices</p>
+        </div>
+        <div class="search-row">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="custSearch" placeholder="Search customer, product, or seller…" oninput="renderCustomerTable()" />
+          </div>
+          <div class="revenue-chip" id="revChip"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>#</th><th>By</th><th>Customer</th><th>Date</th><th>Product</th><th>ML</th><th>Qty</th><th>Price</th><th>Total</th><th>Payment</th><th>Note</th><th></th>
+            </tr></thead>
+            <tbody id="custTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="script.js"></script>
+</body>
+</html>
