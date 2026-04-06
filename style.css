@@ -644,12 +644,12 @@ input[type=number]::-webkit-outer-spin-button { opacity: 0.3; }
 
 /* ── DELETE SALE BUTTON ── */
 .delete-sale-btn {
-  display: flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px;
   background: transparent; border: 1px solid transparent;
   border-radius: 8px; cursor: pointer;
   color: var(--text3); transition: all var(--transition);
-  padding: 0;
+  padding: 0; margin: 0 2px;
 }
 .delete-sale-btn svg { width: 13px; height: 13px; pointer-events: none; }
 .delete-sale-btn:hover {
@@ -657,6 +657,7 @@ input[type=number]::-webkit-outer-spin-button { opacity: 0.3; }
   border-color: rgba(217,79,79,0.22);
   color: var(--red);
 }
+
 /* ── EDIT SALE BUTTON ── */
 .edit-sale-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -664,7 +665,7 @@ input[type=number]::-webkit-outer-spin-button { opacity: 0.3; }
   background: transparent; border: 1px solid transparent;
   border-radius: 8px; cursor: pointer;
   color: var(--text3); transition: all var(--transition);
-  padding: 0; margin-right: 2px;
+  padding: 0; margin: 0 2px;
 }
 .edit-sale-btn svg { width: 13px; height: 13px; pointer-events: none; }
 .edit-sale-btn:hover {
@@ -682,88 +683,160 @@ input[type=number]::-webkit-outer-spin-button { opacity: 0.3; }
   backdrop-filter: blur(4px);
 }
 .edit-modal-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  width: 100%; max-width: 420px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(210,195,175,0.5);
+  border-radius: 20px;
+  width: 100%; max-width: 480px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   overflow: hidden;
+  backdrop-filter: var(--blur-sm);
 }
 .edit-modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  font-family: var(--font-serif); font-size: 1.05rem;
-  color: var(--text1); letter-spacing: 0.02em;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid rgba(210,195,175,0.4);
+  font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600;
+  color: var(--gold); letter-spacing: 0.02em;
 }
 .edit-modal-close {
   background: none; border: none; cursor: pointer;
-  color: var(--text3); font-size: 1rem; padding: 4px 6px;
-  border-radius: 6px; transition: all var(--transition);
+  color: var(--text3); font-size: 1.2rem; padding: 4px 8px;
+  border-radius: 8px; transition: all var(--transition);
 }
-.edit-modal-close:hover { background: var(--surface2); color: var(--text1); }
+.edit-modal-close:hover { background: rgba(217,79,79,0.1); color: var(--red); }
 .edit-modal-body {
-  padding: 16px 20px;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 14px;
   max-height: 65vh; overflow-y: auto;
 }
 .edit-row {
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 6px;
 }
 .edit-row label {
-  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
   color: var(--text3); text-transform: uppercase;
 }
 .edit-modal-footer {
-  display: flex; gap: 10px; padding: 14px 20px;
-  border-top: 1px solid var(--border);
+  display: flex; gap: 12px; padding: 16px 24px;
+  border-top: 1px solid rgba(210,195,175,0.4);
+  background: rgba(255,255,255,0.8);
 }
 .edit-cancel-btn {
   flex: 1; padding: 10px; border-radius: 10px;
-  border: 1px solid var(--border); background: transparent;
+  border: 1px solid rgba(210,195,175,0.5); background: transparent;
   color: var(--text2); cursor: pointer; font-size: 0.88rem;
   transition: all var(--transition);
 }
-.edit-cancel-btn:hover { background: var(--surface2); }
+.edit-cancel-btn:hover { background: rgba(217,79,79,0.08); border-color: rgba(217,79,79,0.2); color: var(--red); }
 .edit-save-btn {
   flex: 2; padding: 10px; border-radius: 10px;
-  border: none; background: var(--gold);
-  color: #1a1208; font-weight: 600; cursor: pointer;
+  border: none; background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #fff; font-weight: 600; cursor: pointer;
   font-size: 0.88rem; transition: all var(--transition);
 }
-.edit-save-btn:hover { opacity: 0.88; }
+.edit-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(184,146,42,0.3); }
 
 /* ── MONTH FILTER & TOOLBAR ── */
 .month-filter-select {
-  height: 38px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  color: var(--text1);
-  font-size: 0.82rem;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(210,195,175,0.5);
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  font-size: 0.85rem;
   font-family: var(--font-sans);
   cursor: pointer;
   outline: none;
-  transition: border-color var(--transition);
-  min-width: 140px;
+  transition: all var(--transition);
+  min-width: 150px;
 }
-.month-filter-select:focus { border-color: var(--gold); }
+.month-filter-select:focus { border-color: var(--gold); background: rgba(255,255,255,0.92); }
 
 .cust-toolbar {
   display: flex;
-  gap: 8px;
-  padding: 0 0 12px 0;
+  gap: 10px;
+  padding: 0 0 16px 0;
   flex-wrap: wrap;
 }
 .toolbar-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 10px;
+  padding: 8px 16px; border-radius: 12px;
   font-size: 0.8rem; font-weight: 500;
-  cursor: pointer; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--text2);
+  cursor: pointer; border: 1px solid rgba(210,195,175,0.5);
+  background: rgba(255,255,255,0.65); color: var(--text2);
   transition: all var(--transition);
 }
-.toolbar-btn:hover { background: var(--surface); color: var(--text1); }
-.refresh-btn:hover { border-color: rgba(180,150,80,0.4); color: var(--gold); }
-.clear-btn:hover   { border-color: rgba(217,79,79,0.3); color: var(--red); }
+.toolbar-btn:hover { background: rgba(255,255,255,0.88); color: var(--text); }
+.refresh-btn:hover { border-color: rgba(184,146,42,0.4); color: var(--gold); }
+.clear-btn:hover   { border-color: rgba(217,79,79,0.3); color: var(--red); background: rgba(217,79,79,0.05); }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content { padding: 20px 16px; }
+  .page-title { font-size: 1.8rem; }
+  .edit-modal-card { max-width: 95%; margin: 16px; }
+  .edit-modal-body { padding: 16px; }
+  .sale-total-bar strong { font-size: 1.3rem; }
+}
+
+/* ── CART STYLES ── */
+.add-to-cart-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 2px dashed rgba(184,146,42,0.35);
+  background: rgba(184,146,42,0.06); color: var(--gold);
+  font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all var(--transition);
+}
+.add-to-cart-btn:hover {
+  background: rgba(184,146,42,0.12); border-color: rgba(184,146,42,0.55);
+  transform: translateY(-1px);
+}
+
+.cart-header {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 600; color: var(--gold);
+  padding: 14px 20px 10px;
+  background: rgba(255,255,255,0.72); border: 1px solid rgba(184,146,42,0.2);
+  border-radius: 16px 16px 0 0; border-bottom: none;
+}
+.cart-count {
+  background: var(--gold); color: #fff;
+  font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
+  border-radius: 20px; padding: 2px 8px; margin-left: auto;
+}
+
+.cart-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.65); border: 1px solid rgba(210,195,175,0.3);
+  border-top: none;
+  transition: background var(--transition);
+}
+.cart-item:last-child { border-radius: 0 0 16px 16px; }
+.cart-item:hover { background: rgba(255,255,255,0.85); }
+
+.cart-item-info { flex: 1; }
+.cart-item-name { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+.cart-item-meta { font-size: 0.76rem; color: var(--text3); margin-top: 2px; }
+.cart-item-total {
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 600;
+  color: var(--green); white-space: nowrap;
+}
+.cart-remove-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--text3); cursor: pointer; transition: all var(--transition); padding: 0;
+}
+.cart-remove-btn:hover {
+  background: rgba(217,79,79,0.1); border-color: rgba(217,79,79,0.22); color: var(--red);
+}
+
+@media (max-width: 480px) {
+  .size-chip { padding: 6px 14px; font-size: 0.75rem; }
+  .cta-btn { padding: 10px 18px; font-size: 0.8rem; }
+  .form-card { padding: 16px; }
+  .entry-panel-inner { padding: 16px; }
+}
