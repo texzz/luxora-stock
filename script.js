@@ -23,6 +23,9 @@ let nextInvoice = 1;
 let selectedSize = "20";
 let selectedFrag = null;
 let selectedSaleSize = null;
+let saleCart = [];
+let editCart = [];
+let editingInvoiceGroup = null;
 
 // Firebase references
 let db, collection, getDocs, doc, setDoc, deleteDoc, addDoc, onSnapshot, query, orderBy;
@@ -51,7 +54,6 @@ function waitForFirebase() {
 /* ── FIREBASE DATA OPERATIONS ── */
 async function loadDataFromFirebase() {
   try {
-    // Load fragrances
     const fragsSnapshot = await getDocs(collection(db, "fragrances"));
     if (!fragsSnapshot.empty) {
       fragrances = [];
@@ -63,7 +65,6 @@ async function loadDataFromFirebase() {
       await saveFragrancesToFirebase();
     }
 
-    // Load invoices
     const invSnapshot = await getDocs(collection(db, "invoices"));
     if (!invSnapshot.empty) {
       invoices = [];
@@ -78,7 +79,6 @@ async function loadDataFromFirebase() {
       nextInvoice = invoices.length + 1;
     }
 
-    // Load or create meta
     const metaRef = doc(db, "meta", "app");
     const metaSnap = await getDocs(collection(db, "meta"));
     if (metaSnap.empty) {
@@ -422,6 +422,7 @@ async function showApp() {
   await loadDataFromFirebase();
   setupRealtimeListeners();
   setDefaultDate();
+  resetSaleForm();
 }
 
 function logout() {
@@ -470,6 +471,7 @@ function switchView(view, el) {
   closeSidebar();
   if (view === "stock-list") renderStockTable();
   if (view === "customer-list") renderCustomerTable();
+  if (view === "add-sale") resetSaleForm();
 }
 
 function toggleSidebar() {
@@ -572,7 +574,7 @@ async function confirmAddStock() {
   showToast(`Added ${qty} × ${frag.name} (${selectedSize}ml)`, "success");
 }
 
-/* ════ SALE SYSTEM ════ */
+/* ════ SALE SYSTEM with CART ════ */
 function setDefaultDate() {
   document.getElementById("saleDate").value = new Date().toISOString().split("T")[0];
 }
@@ -631,85 +633,10 @@ function updateSaleSummary() {
   }
 }
 
-async function confirmSale() {
-  const by = (document.getElementById("saleBy").value || "").trim().toUpperCase();
-  const customer = (document.getElementById("saleCustomer").value || "").trim().toUpperCase();
-  const phone = (document.getElementById("salePhone").value || "").trim().replace(/\s+/g,"");
-  const date = document.getElementById("saleDate").value;
-  const product = document.getElementById("saleFragrance").value;
-  const payment = document.getElementById("salePayment").value;
-  const note = (document.getElementById("saleNote").value || "").trim().toUpperCase();
-  const qty = parseInt(document.getElementById("saleQty").value) || 1;
-  const price = parseFloat(document.getElementById("salePrice").value) || 0;
-  const ml = selectedSaleSize ? parseInt(selectedSaleSize) : null;
-
-  if (!customer) { showToast("Enter customer name", "error"); return; }
-  if (!product) { showToast("Select a fragrance", "error"); return; }
-  if (!ml) { showToast("Select a bottle size", "error"); return; }
-
-  const fragIndex = fragrances.findIndex(f => f.name === product);
-  if (fragIndex !== -1) {
-    const frag = fragrances[fragIndex];
-    const key = "ml" + ml;
-    const cur = frag[key] || 0;
-    if (cur < qty) showToast(`⚠ Only ${cur} in stock — recorded anyway`, "error");
-    frag[key] = Math.max(0, cur - qty);
-    await updateFragranceInFirebase(fragIndex);
-  }
-
-  const total = qty * price;
-  const inv = {
-    by,
-    invoiceNo: nextInvoice++,
-    customer,
-    phone,
-    date,
-    product,
-    ml,
-    qty,
-    price,
-    total,
-    payment,
-    note
-  };
-
-  await addInvoiceToFirebase(inv);
-
-  // WhatsApp Message
-  if (phone) {
-    const dateStr = date
-      ? new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-      : "Today";
-
-    const msg = `Hello ${customer},
-
-Your order has been placed successfully! Here are your order details:
-
-*Product:* ${product}
-*Size:* ${ml}ml
-*Quantity:* ${qty}
-*Price per bottle:* ₹${price.toLocaleString("en-IN")}
-*Total Amount:* ₹${total.toLocaleString("en-IN")}
-*Date:* ${dateStr}
-*Payment:* ${payment}
-*Invoice #:* ${inv.invoiceNo}
-${note ? `*Note:* ${note}` : ""}
-To confirm your order, please reply with *YES*.
-
-Thank you for choosing *Luxora*`;
-
-    let waPhone = phone.replace(/[^0-9]/g, "");
-    if (waPhone.length === 10) waPhone = "91" + waPhone;
-    else if (waPhone.startsWith("0")) waPhone = "91" + waPhone.slice(1);
-
-    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
-    setTimeout(() => window.open(waUrl, "_blank"), 400);
-    showToast(`Invoice #${inv.invoiceNo} recorded — Opening WhatsApp…`, "success");
-  } else {
-    showToast(`Invoice #${inv.invoiceNo} recorded — ₹${total.toLocaleString("en-IN")}`, "success");
-  }
-
-  // Reset form
+/* ── CART FUNCTIONS ── */
+function resetSaleForm() {
+  saleCart = [];
+  renderCart();
   document.getElementById("saleCustomer").value = "";
   document.getElementById("salePhone").value = "";
   document.getElementById("salePrice").value = "";
@@ -722,7 +649,192 @@ Thank you for choosing *Luxora*`;
   if(preview) preview.style.display = "none";
   const totalBar = document.getElementById("saleTotalBar");
   if(totalBar) totalBar.style.display = "none";
+  const cartSection = document.getElementById("cartSection");
+  if(cartSection) cartSection.style.display = "none";
   setDefaultDate();
+}
+
+function addToCart() {
+  const product = document.getElementById("saleFragrance").value;
+  const ml = selectedSaleSize ? parseInt(selectedSaleSize) : null;
+  const qty = parseInt(document.getElementById("saleQty").value) || 1;
+  const price = parseFloat(document.getElementById("salePrice").value) || 0;
+
+  if (!product) { showToast("Select a fragrance", "error"); return; }
+  if (!ml) { showToast("Select a bottle size", "error"); return; }
+  if (qty < 1) { showToast("Enter valid quantity", "error"); return; }
+  if (price <= 0) { showToast("Enter valid price per bottle", "error"); return; }
+
+  const frag = fragrances.find(f => f.name === product);
+  if (frag) {
+    const currentStock = getStock(frag, ml);
+    if (currentStock < qty) {
+      showToast(`⚠ Only ${currentStock} in stock for ${product} (${ml}ml)`, "error");
+    }
+  }
+
+  saleCart.push({
+    id: Date.now() + Math.random(),
+    product,
+    ml,
+    qty,
+    price,
+    total: qty * price
+  });
+
+  document.getElementById("saleFragrance").value = "";
+  document.querySelectorAll(".size-pill").forEach(p => p.classList.remove("active"));
+  selectedSaleSize = null;
+  document.getElementById("saleQty").value = "1";
+  document.getElementById("salePrice").value = "";
+  const preview = document.getElementById("saleStockPreview");
+  if(preview) preview.style.display = "none";
+  const totalBar = document.getElementById("saleTotalBar");
+  if(totalBar) totalBar.style.display = "none";
+
+  renderCart();
+  showToast(`Added ${product} (${ml}ml) ×${qty} to cart`, "success");
+}
+
+function renderCart() {
+  const cartSection = document.getElementById("cartSection");
+  const cartItemsDiv = document.getElementById("cartItems");
+  
+  if (saleCart.length === 0) {
+    if (cartSection) cartSection.style.display = "none";
+    return;
+  }
+
+  if (cartSection) cartSection.style.display = "block";
+  document.getElementById("cartCount").textContent = saleCart.length;
+
+  let cartHtml = "";
+  let grandTotal = 0;
+
+  saleCart.forEach((item, idx) => {
+    grandTotal += item.total;
+    cartHtml += `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.product}</div>
+          <div class="cart-item-meta">${item.ml}ml × ${item.qty} @ ₹${item.price.toLocaleString("en-IN")}</div>
+        </div>
+        <div class="cart-item-total">₹${item.total.toLocaleString("en-IN")}</div>
+        <button class="cart-remove-btn" onclick="removeFromCart(${idx})" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  });
+
+  cartHtml += `
+    <div class="cart-item" style="background:rgba(184,146,42,0.08); border-top:1px solid rgba(184,146,42,0.2);">
+      <div class="cart-item-info"><strong>GRAND TOTAL</strong></div>
+      <div class="cart-item-total" style="font-size:1.2rem;">₹${grandTotal.toLocaleString("en-IN")}</div>
+      <div style="width:28px"></div>
+    </div>
+  `;
+  cartItemsDiv.innerHTML = cartHtml;
+}
+
+function removeFromCart(index) {
+  saleCart.splice(index, 1);
+  renderCart();
+}
+
+async function confirmSale() {
+  if (saleCart.length === 0) {
+    showToast("Cart is empty! Add at least one fragrance", "error");
+    return;
+  }
+
+  const by = (document.getElementById("saleBy").value || "").trim().toUpperCase();
+  const customer = (document.getElementById("saleCustomer").value || "").trim().toUpperCase();
+  const phone = (document.getElementById("salePhone").value || "").trim().replace(/\s+/g, "");
+  const date = document.getElementById("saleDate").value;
+  const payment = document.getElementById("salePayment").value;
+  const note = (document.getElementById("saleNote").value || "").trim().toUpperCase();
+
+  if (!customer) { showToast("Enter customer name", "error"); return; }
+
+  let allInvoices = [];
+  let grandTotal = 0;
+  let waMessages = [];
+
+  for (const item of saleCart) {
+    const total = item.qty * item.price;
+    grandTotal += total;
+
+    const fragIndex = fragrances.findIndex(f => f.name === item.product);
+    if (fragIndex !== -1) {
+      const frag = fragrances[fragIndex];
+      const key = "ml" + item.ml;
+      const cur = frag[key] || 0;
+      if (cur < item.qty) {
+        showToast(`⚠ Only ${cur} in stock for ${item.product} (${item.ml}ml) — recorded anyway`, "error");
+      }
+      frag[key] = Math.max(0, cur - item.qty);
+      await updateFragranceInFirebase(fragIndex);
+    }
+
+    const inv = {
+      by,
+      invoiceNo: nextInvoice++,
+      customer,
+      phone,
+      date,
+      product: item.product,
+      ml: item.ml,
+      qty: item.qty,
+      price: item.price,
+      total,
+      payment,
+      note
+    };
+
+    await addInvoiceToFirebase(inv);
+    allInvoices.push(inv);
+
+    if (phone) {
+      waMessages.push(`- ${item.product} (${item.ml}ml): ${item.qty} × ₹${item.price.toLocaleString("en-IN")} = ₹${total.toLocaleString("en-IN")}`);
+    }
+  }
+
+  if (phone) {
+    const dateStr = date
+      ? new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+      : "Today";
+
+    const itemsList = waMessages.join("\n");
+    const msg = `Hello ${customer},
+
+Your order has been placed successfully! Here are your order details:
+
+${itemsList}
+
+*Grand Total:* ₹${grandTotal.toLocaleString("en-IN")}
+*Date:* ${dateStr}
+*Payment:* ${payment}
+*Invoice #s:* ${allInvoices.map(i => i.invoiceNo).join(", ")}
+${note ? `*Note:* ${note}` : ""}
+
+Thank you for choosing *Luxora*`;
+
+    let waPhone = phone.replace(/[^0-9]/g, "");
+    if (waPhone.length === 10) waPhone = "91" + waPhone;
+    else if (waPhone.startsWith("0")) waPhone = "91" + waPhone.slice(1);
+
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    setTimeout(() => window.open(waUrl, "_blank"), 400);
+    showToast(`${saleCart.length} item(s) recorded — Opening WhatsApp…`, "success");
+  } else {
+    showToast(`${saleCart.length} item(s) recorded — ₹${grandTotal.toLocaleString("en-IN")}`, "success");
+  }
+
+  resetSaleForm();
+  renderCart();
 }
 
 /* ════ STATS ════ */
@@ -831,7 +943,7 @@ function renderCustomerTable() {
       <td><span class="pay-tag ${payClass}">${iv.payment || "PENDING"}</span></td>
       <td style="color:var(--text3);font-size:0.78rem">${iv.note || ""}</td>
       <td style="white-space:nowrap">
-        <button class="edit-sale-btn" onclick="openEditModal(${iv.invoiceNo})" title="Edit this sale">
+        <button class="edit-sale-btn" onclick="openEditModalForCustomer(${iv.invoiceNo})" title="Edit this sale">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
         <button class="delete-sale-btn" onclick="deleteSale(${iv.invoiceNo})" title="Delete this sale">
@@ -843,13 +955,355 @@ function renderCustomerTable() {
   });
 }
 
+/* ════ EDIT ORDER WITH MULTI-ITEM CART ════ */
+function openEditModalForCustomer(invoiceNo) {
+  // Get all invoices for this customer on the same date
+  const targetInvoice = invoices.find(i => i.invoiceNo === invoiceNo);
+  if (!targetInvoice) return;
+
+  const allCustomerInvoices = invoices.filter(i => 
+    i.customer === targetInvoice.customer && 
+    i.date === targetInvoice.date &&
+    i.phone === targetInvoice.phone
+  );
+
+  editingInvoiceGroup = allCustomerInvoices.map(iv => iv.invoiceNo);
+  
+  // Build edit cart from existing invoices
+  editCart = allCustomerInvoices.map(iv => ({
+    id: iv.invoiceNo,
+    product: iv.product,
+    ml: iv.ml,
+    qty: iv.qty,
+    price: iv.price,
+    total: iv.total,
+    invoiceNo: iv.invoiceNo
+  }));
+
+  const existing = document.getElementById("editOrderModal");
+  if (existing) existing.remove();
+
+  const fragOptions = fragrances.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+
+  const modal = document.createElement("div");
+  modal.id = "editOrderModal";
+  modal.className = "edit-modal-overlay";
+  modal.innerHTML = `
+    <div class="edit-modal-card" style="max-width: 600px;">
+      <div class="edit-modal-header">
+        <span>Edit Order - ${targetInvoice.customer} (${new Date(targetInvoice.date).toLocaleDateString()})</span>
+        <button class="edit-modal-close" onclick="closeEditOrderModal()">✕</button>
+      </div>
+      <div class="edit-modal-body">
+        <div class="edit-row">
+          <label>Customer Name</label>
+          <input id="editCustomer" class="field-input" value="${targetInvoice.customer || ''}" />
+        </div>
+        <div class="edit-row">
+          <label>Phone Number</label>
+          <input id="editPhone" class="field-input" value="${targetInvoice.phone || ''}" />
+        </div>
+        <div class="edit-row">
+          <label>Date</label>
+          <input id="editDate" type="date" class="field-input" value="${targetInvoice.date || ''}" />
+        </div>
+        <div class="edit-row">
+          <label>Sold By</label>
+          <input id="editBy" class="field-input" value="${targetInvoice.by || ''}" />
+        </div>
+        <div class="edit-row">
+          <label>Payment Method</label>
+          <select id="editPayment" class="field-input">
+            <option ${targetInvoice.payment === 'PAID/SBI' ? 'selected' : ''}>PAID/SBI</option>
+            <option ${targetInvoice.payment === 'PAID/CASH' ? 'selected' : ''}>PAID/CASH</option>
+            <option ${targetInvoice.payment === 'PENDING' ? 'selected' : ''}>PENDING</option>
+            <option ${targetInvoice.payment === 'PERSONAL' ? 'selected' : ''}>PERSONAL</option>
+          </select>
+        </div>
+        <div class="edit-row">
+          <label>Note</label>
+          <input id="editNote" class="field-input" value="${targetInvoice.note || ''}" />
+        </div>
+        
+        <div class="edit-row" style="margin-top: 12px; border-top: 1px solid rgba(210,195,175,0.3); padding-top: 12px;">
+          <label>ADD FRAGRANCE TO ORDER</label>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+            <select id="editFragrance" class="field-input" onchange="updateEditStockPreviewForOrder()">
+              <option value="">— Select —</option>
+              ${fragOptions}
+            </select>
+            <div class="pill-row">
+              <button class="size-pill edit-size-pill-order" data-sz="20" onclick="selectEditSizePillForOrder(this)">20ml</button>
+              <button class="size-pill edit-size-pill-order" data-sz="30" onclick="selectEditSizePillForOrder(this)">30ml</button>
+              <button class="size-pill edit-size-pill-order" data-sz="50" onclick="selectEditSizePillForOrder(this)">50ml</button>
+              <button class="size-pill edit-size-pill-order" data-sz="100" onclick="selectEditSizePillForOrder(this)">100ml</button>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeEditQty(-1)">−</button>
+              <input type="number" id="editQty" value="1" min="1" />
+              <button class="qty-btn" onclick="changeEditQty(1)">+</button>
+            </div>
+            <input type="number" id="editPrice" class="field-input" placeholder="Price per bottle" />
+          </div>
+          <button class="add-to-cart-btn" onclick="addToEditCart()" style="margin-top: 10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+            Add to Order
+          </button>
+        </div>
+        
+        <div class="edit-row" style="margin-top: 12px;">
+          <label>CURRENT ITEMS IN ORDER</label>
+          <div id="editCartItems" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+        
+        <div class="sale-total-bar" id="editOrderTotalBar" style="display:flex; margin-top: 12px;">
+          <span>Order Total</span>
+          <strong id="editOrderTotal">₹0</strong>
+        </div>
+      </div>
+      <div class="edit-modal-footer">
+        <button class="edit-cancel-btn" onclick="closeEditOrderModal()">Cancel</button>
+        <button class="edit-save-btn" onclick="saveEditedOrder()">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  renderEditCart();
+  updateEditOrderTotal();
+}
+
+let editSelectedSizeOrder = null;
+
+function selectEditSizePillForOrder(el) {
+  document.querySelectorAll(".edit-size-pill-order").forEach(p => {
+    p.style.background = "";
+    p.style.borderColor = "";
+  });
+  el.style.background = "rgba(184,146,42,0.2)";
+  el.style.borderColor = "rgba(184,146,42,0.5)";
+  editSelectedSizeOrder = parseInt(el.dataset.sz);
+  updateEditStockPreviewForOrder();
+}
+
+function updateEditStockPreviewForOrder() {
+  const product = document.getElementById("editFragrance").value;
+  if (product && editSelectedSizeOrder) {
+    const frag = fragrances.find(f => f.name === product);
+    const preview = document.getElementById("editStockPreviewOrder");
+    if (frag) {
+      const stock = getStock(frag, editSelectedSizeOrder);
+      showToast(`Stock available: ${stock} bottles`, "info");
+    }
+  }
+}
+
+function changeEditQty(d) {
+  const inp = document.getElementById("editQty");
+  inp.value = Math.max(1, parseInt(inp.value || 1) + d);
+}
+
+function addToEditCart() {
+  const product = document.getElementById("editFragrance").value;
+  const ml = editSelectedSizeOrder;
+  const qty = parseInt(document.getElementById("editQty").value) || 1;
+  const price = parseFloat(document.getElementById("editPrice").value) || 0;
+
+  if (!product) { showToast("Select a fragrance", "error"); return; }
+  if (!ml) { showToast("Select a bottle size", "error"); return; }
+  if (qty < 1) { showToast("Enter valid quantity", "error"); return; }
+  if (price <= 0) { showToast("Enter valid price", "error"); return; }
+
+  editCart.push({
+    id: Date.now() + Math.random(),
+    product,
+    ml,
+    qty,
+    price,
+    total: qty * price,
+    isNew: true
+  });
+
+  document.getElementById("editFragrance").value = "";
+  document.getElementById("editQty").value = "1";
+  document.getElementById("editPrice").value = "";
+  editSelectedSizeOrder = null;
+  document.querySelectorAll(".edit-size-pill-order").forEach(p => {
+    p.style.background = "";
+    p.style.borderColor = "";
+  });
+
+  renderEditCart();
+  updateEditOrderTotal();
+  showToast(`Added ${product} (${ml}ml) ×${qty}`, "success");
+}
+
+function removeFromEditCart(index) {
+  editCart.splice(index, 1);
+  renderEditCart();
+  updateEditOrderTotal();
+}
+
+function renderEditCart() {
+  const container = document.getElementById("editCartItems");
+  if (!container) return;
+
+  if (editCart.length === 0) {
+    container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text3);">No items in this order</div>';
+    return;
+  }
+
+  let html = "";
+  let grandTotal = 0;
+
+  editCart.forEach((item, idx) => {
+    grandTotal += item.total;
+    const isExisting = !item.isNew;
+    html += `
+      <div class="cart-item" style="margin-bottom: 8px; ${isExisting ? 'background: rgba(184,146,42,0.05);' : ''}">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.product} ${isExisting ? '<span style="font-size:0.7rem;color:var(--gold);">(existing)</span>' : ''}</div>
+          <div class="cart-item-meta">${item.ml}ml × ${item.qty} @ ₹${item.price.toLocaleString("en-IN")}</div>
+        </div>
+        <div class="cart-item-total">₹${item.total.toLocaleString("en-IN")}</div>
+        <button class="cart-remove-btn" onclick="removeFromEditCart(${idx})" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  document.getElementById("editOrderTotal").textContent = "₹" + grandTotal.toLocaleString("en-IN");
+}
+
+function updateEditOrderTotal() {
+  const total = editCart.reduce((sum, item) => sum + item.total, 0);
+  const totalEl = document.getElementById("editOrderTotal");
+  if (totalEl) totalEl.textContent = "₹" + total.toLocaleString("en-IN");
+}
+
+async function saveEditedOrder() {
+  const newCustomer = document.getElementById("editCustomer").value.trim().toUpperCase();
+  const newPhone = document.getElementById("editPhone").value.trim().replace(/\s+/g, "");
+  const newDate = document.getElementById("editDate").value;
+  const newBy = document.getElementById("editBy").value.trim().toUpperCase();
+  const newPayment = document.getElementById("editPayment").value;
+  const newNote = document.getElementById("editNote").value.trim().toUpperCase();
+
+  if (!newCustomer) { showToast("Customer name required", "error"); return; }
+  if (editCart.length === 0) { showToast("Order must have at least one item", "error"); return; }
+
+  // First, restore stock for all existing invoices being edited
+  for (const invNo of editingInvoiceGroup) {
+    const oldInv = invoices.find(i => i.invoiceNo === invNo);
+    if (oldInv) {
+      const fragIndex = fragrances.findIndex(f => f.name === oldInv.product);
+      if (fragIndex !== -1 && oldInv.ml && oldInv.qty) {
+        const key = "ml" + oldInv.ml;
+        fragrances[fragIndex][key] = (fragrances[fragIndex][key] || 0) + oldInv.qty;
+        await updateFragranceInFirebase(fragIndex);
+      }
+      await deleteInvoiceFromFirebase(invNo);
+    }
+  }
+
+  // Remove old invoices from local array
+  invoices = invoices.filter(i => !editingInvoiceGroup.includes(i.invoiceNo));
+
+  // Create new invoices from edit cart
+  let newInvoices = [];
+  let grandTotal = 0;
+
+  for (const item of editCart) {
+    const total = item.qty * item.price;
+    grandTotal += total;
+
+    // Deduct stock
+    const fragIndex = fragrances.findIndex(f => f.name === item.product);
+    if (fragIndex !== -1) {
+      const key = "ml" + item.ml;
+      const cur = fragrances[fragIndex][key] || 0;
+      if (cur < item.qty) {
+        showToast(`⚠ Only ${cur} in stock for ${item.product} (${item.ml}ml)`, "error");
+      }
+      fragrances[fragIndex][key] = Math.max(0, cur - item.qty);
+      await updateFragranceInFirebase(fragIndex);
+    }
+
+    const newInv = {
+      by: newBy,
+      invoiceNo: nextInvoice++,
+      customer: newCustomer,
+      phone: newPhone,
+      date: newDate,
+      product: item.product,
+      ml: item.ml,
+      qty: item.qty,
+      price: item.price,
+      total: total,
+      payment: newPayment,
+      note: newNote
+    };
+
+    await addInvoiceToFirebase(newInv);
+    newInvoices.push(newInv);
+  }
+
+  // Send WhatsApp message for updated order
+  if (newPhone) {
+    const dateStr = newDate
+      ? new Date(newDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+      : "Today";
+
+    let itemsList = "";
+    for (const item of editCart) {
+      itemsList += `- ${item.product} (${item.ml}ml): ${item.qty} × ₹${item.price.toLocaleString("en-IN")} = ₹${item.total.toLocaleString("en-IN")}\n`;
+    }
+
+    const msg = `Hello ${newCustomer},
+
+Your order has been UPDATED! Here are your new order details:
+
+${itemsList}
+
+*Grand Total:* ₹${grandTotal.toLocaleString("en-IN")}
+*Date:* ${dateStr}
+*Payment:* ${newPayment}
+*Invoice #s:* ${newInvoices.map(i => i.invoiceNo).join(", ")}
+${newNote ? `*Note:* ${newNote}` : ""}
+
+Thank you for choosing *Luxora*`;
+
+    let waPhone = newPhone.replace(/[^0-9]/g, "");
+    if (waPhone.length === 10) waPhone = "91" + waPhone;
+    else if (waPhone.startsWith("0")) waPhone = "91" + waPhone.slice(1);
+
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    setTimeout(() => window.open(waUrl, "_blank"), 400);
+    showToast(`Order updated — ${editCart.length} item(s)`, "success");
+  } else {
+    showToast(`Order updated — ${editCart.length} item(s)`, "success");
+  }
+
+  closeEditOrderModal();
+}
+
+function closeEditOrderModal() {
+  const modal = document.getElementById("editOrderModal");
+  if (modal) modal.remove();
+  editingInvoiceGroup = null;
+  editCart = [];
+  editSelectedSizeOrder = null;
+}
+
 async function deleteSale(invoiceNo) {
   if (!confirm(`Delete Invoice #${invoiceNo}? This will restore the stock.`)) return;
 
   const iv = invoices.find(iv => iv.invoiceNo === invoiceNo);
   if (!iv) { showToast("Sale not found", "error"); return; }
 
-  // Restore stock
   const fragIndex = fragrances.findIndex(f => f.name === iv.product);
   if (fragIndex !== -1 && iv.ml && iv.qty) {
     const frag = fragrances[fragIndex];
@@ -862,207 +1316,6 @@ async function deleteSale(invoiceNo) {
 
   await deleteInvoiceFromFirebase(invoiceNo);
   showToast(`Invoice #${invoiceNo} deleted & stock restored`, "success");
-}
-
-/* ════ EDIT SALE MODAL ════ */
-let editSelectedSize = null;
-
-function openEditModal(invoiceNo) {
-  const iv = invoices.find(i => i.invoiceNo === invoiceNo);
-  if (!iv) return;
-
-  const existing = document.getElementById("editModal");
-  if (existing) existing.remove();
-
-  const fragOptions = fragrances.map(f => `<option value="${f.name}" ${f.name === iv.product ? 'selected' : ''}>${f.name}</option>`).join('');
-  const sizeOptions = [20, 30, 50, 100].map(sz => 
-    `<button class="size-pill edit-size-pill" data-sz="${sz}" onclick="selectEditSizePill(this, ${invoiceNo})" style="${iv.ml === sz ? 'background:rgba(184,146,42,0.2);border-color:rgba(184,146,42,0.5)' : ''}">${sz} ml</button>`
-  ).join('');
-
-  const modal = document.createElement("div");
-  modal.id = "editModal";
-  modal.className = "edit-modal-overlay";
-  modal.innerHTML = `
-    <div class="edit-modal-card">
-      <div class="edit-modal-header">
-        <span>Edit Invoice #${iv.invoiceNo}</span>
-        <button class="edit-modal-close" onclick="closeEditModal()">✕</button>
-      </div>
-      <div class="edit-modal-body">
-        <div class="edit-row">
-          <label>Customer</label>
-          <input id="em_customer" class="field-input" value="${iv.customer || ''}" />
-        </div>
-        <div class="edit-row">
-          <label>Sold By</label>
-          <input id="em_by" class="field-input" value="${iv.by || ''}" />
-        </div>
-        <div class="edit-row">
-          <label>Date</label>
-          <input id="em_date" type="date" class="field-input" value="${iv.date || ''}" />
-        </div>
-        <div class="edit-row">
-          <label>Fragrance</label>
-          <select id="em_product" class="field-input" onchange="updateEditStockPreview(${invoiceNo})">
-            ${fragOptions}
-          </select>
-        </div>
-        <div class="edit-row">
-          <label>Size (ml)</label>
-          <div class="pill-row" id="editSizePills">
-            ${sizeOptions}
-          </div>
-        </div>
-        <div class="edit-row">
-          <label>Quantity</label>
-          <input id="em_qty" type="number" class="field-input" value="${iv.qty || 1}" min="1" onchange="updateEditTotal(${invoiceNo})" />
-        </div>
-        <div class="edit-row">
-          <label>Price per bottle (₹)</label>
-          <input id="em_price" type="number" class="field-input" value="${iv.price || 0}" onchange="updateEditTotal(${invoiceNo})" />
-        </div>
-        <div class="edit-row">
-          <div class="stock-preview-box" id="editStockPreview" style="display:flex">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-            Current Stock: <strong id="editStockVal">—</strong>
-          </div>
-        </div>
-        <div class="edit-row">
-          <label>Payment</label>
-          <select id="em_payment" class="field-input">
-            <option ${iv.payment === 'PAID/SBI' ? 'selected' : ''}>PAID/SBI</option>
-            <option ${iv.payment === 'PAID/CASH' ? 'selected' : ''}>PAID/CASH</option>
-            <option ${iv.payment === 'PENDING' ? 'selected' : ''}>PENDING</option>
-            <option ${iv.payment === 'PERSONAL' ? 'selected' : ''}>PERSONAL</option>
-            <option ${!iv.payment ? 'selected' : ''} value=""></option>
-          </select>
-        </div>
-        <div class="edit-row">
-          <label>Note</label>
-          <input id="em_note" class="field-input" value="${iv.note || ''}" />
-        </div>
-        <div class="edit-row">
-          <div class="sale-total-bar" id="editTotalBar" style="display:flex; margin:0">
-            <span>New Total</span>
-            <strong id="editTotalAmount">₹${(iv.price * iv.qty).toLocaleString("en-IN")}</strong>
-          </div>
-        </div>
-      </div>
-      <div class="edit-modal-footer">
-        <button class="edit-cancel-btn" onclick="closeEditModal()">Cancel</button>
-        <button class="edit-save-btn" onclick="saveEditModal(${iv.invoiceNo})">Save Changes</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  modal.addEventListener("click", e => { if (e.target === modal) closeEditModal(); });
-  updateEditStockPreview(invoiceNo);
-}
-
-function selectEditSizePill(el, invoiceNo) {
-  document.querySelectorAll(".edit-size-pill").forEach(p => {
-    p.style.background = "";
-    p.style.borderColor = "";
-  });
-  el.style.background = "rgba(184,146,42,0.2)";
-  el.style.borderColor = "rgba(184,146,42,0.5)";
-  editSelectedSize = parseInt(el.dataset.sz);
-  updateEditStockPreview(invoiceNo);
-}
-
-function updateEditStockPreview(invoiceNo) {
-  const productSelect = document.getElementById("em_product");
-  const product = productSelect ? productSelect.value : "";
-  const frag = fragrances.find(f => f.name === product);
-  const stockSpan = document.getElementById("editStockVal");
-  if (frag && editSelectedSize && stockSpan) {
-    stockSpan.textContent = getStock(frag, editSelectedSize) + " bottles";
-  } else if (stockSpan) {
-    stockSpan.textContent = "—";
-  }
-  updateEditTotal(invoiceNo);
-}
-
-function updateEditTotal(invoiceNo) {
-  const qty = parseInt(document.getElementById("em_qty")?.value) || 0;
-  const price = parseFloat(document.getElementById("em_price")?.value) || 0;
-  const totalSpan = document.getElementById("editTotalAmount");
-  if (totalSpan) {
-    totalSpan.textContent = "₹" + (qty * price).toLocaleString("en-IN");
-  }
-}
-
-function closeEditModal() {
-  const modal = document.getElementById("editModal");
-  if (modal) modal.remove();
-  editSelectedSize = null;
-}
-
-async function saveEditModal(invoiceNo) {
-  const idx = invoices.findIndex(i => i.invoiceNo === invoiceNo);
-  if (idx === -1) return;
-
-  const oldIv = invoices[idx];
-  const newCustomer = document.getElementById("em_customer").value.trim().toUpperCase();
-  const newBy = document.getElementById("em_by").value.trim().toUpperCase();
-  const newDate = document.getElementById("em_date").value;
-  const newProduct = document.getElementById("em_product").value;
-  const newQty = parseInt(document.getElementById("em_qty").value) || 1;
-  const newPrice = parseFloat(document.getElementById("em_price").value) || 0;
-  const newPayment = document.getElementById("em_payment").value;
-  const newNote = document.getElementById("em_note").value.trim().toUpperCase();
-  const newMl = editSelectedSize || oldIv.ml;
-
-  // Handle stock adjustments
-  if (oldIv.product !== newProduct || oldIv.ml !== newMl || oldIv.qty !== newQty) {
-    // Restore old stock
-    const oldFragIndex = fragrances.findIndex(f => f.name === oldIv.product);
-    if (oldFragIndex !== -1) {
-      const oldKey = "ml" + oldIv.ml;
-      fragrances[oldFragIndex][oldKey] = (fragrances[oldFragIndex][oldKey] || 0) + oldIv.qty;
-      await updateFragranceInFirebase(oldFragIndex);
-    }
-
-    // Deduct new stock
-    const newFragIndex = fragrances.findIndex(f => f.name === newProduct);
-    if (newFragIndex !== -1) {
-      const newKey = "ml" + newMl;
-      const current = fragrances[newFragIndex][newKey] || 0;
-      if (current < newQty) {
-        showToast(`⚠ Warning: Only ${current} in stock for ${newProduct} (${newMl}ml)`, "error");
-      }
-      fragrances[newFragIndex][newKey] = Math.max(0, current - newQty);
-      await updateFragranceInFirebase(newFragIndex);
-    }
-  } else if (oldIv.qty !== newQty) {
-    // Same product, just quantity changed
-    const fragIndex = fragrances.findIndex(f => f.name === newProduct);
-    if (fragIndex !== -1) {
-      const key = "ml" + newMl;
-      const diff = oldIv.qty - newQty;
-      fragrances[fragIndex][key] = (fragrances[fragIndex][key] || 0) + diff;
-      await updateFragranceInFirebase(fragIndex);
-    }
-  }
-
-  const newTotal = newQty * newPrice;
-  const updatedInvoice = {
-    ...oldIv,
-    customer: newCustomer,
-    by: newBy,
-    date: newDate,
-    product: newProduct,
-    ml: newMl,
-    qty: newQty,
-    price: newPrice,
-    total: newTotal,
-    payment: newPayment,
-    note: newNote
-  };
-
-  await updateInvoiceInFirebase(invoiceNo, updatedInvoice);
-  closeEditModal();
-  showToast(`Invoice #${invoiceNo} updated`, "success");
 }
 
 /* ════ EXPORT EXCEL ════ */
