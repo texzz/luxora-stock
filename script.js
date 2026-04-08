@@ -69,8 +69,8 @@ async function loadDataFromFirebase() {
       invSnapshot.forEach(docSnap => {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort by date descending (newest first)
-      invoices.sort((a, b) => new Date(b.date) - new Date(a.date));
+      // Sort by invoice number ascending (1 to 95)
+      invoices.sort((a, b) => a.invoiceNo - b.invoiceNo);
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
     } else {
       invoices = defaultInvoices();
@@ -188,7 +188,8 @@ function setupRealtimeListeners() {
       snapshot.forEach(docSnap => {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
-      invoices.sort((a, b) => new Date(b.date) - new Date(a.date));
+      // Sort by invoice number ascending (1 to 95)
+      invoices.sort((a, b) => a.invoiceNo - b.invoiceNo);
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
       renderAll();
     }
@@ -910,7 +911,8 @@ function renderCustomerTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  const sortedInvoices = [...invoices].sort((a, b) => b.invoiceNo - a.invoiceNo);
+  // Sort invoices by invoice number ascending (1 to 95)
+  const sortedInvoices = [...invoices].sort((a, b) => a.invoiceNo - b.invoiceNo);
 
   const filtered = sortedInvoices.filter(iv => {
     const matchQ = (iv.customer||"").toLowerCase().includes(q) ||
@@ -961,6 +963,8 @@ function renderCustomerTable() {
 
 /* ════ EDIT ORDER WITH MULTI-ITEM CART ════ */
 let editSelectedSizeOrder = null;
+let editingInvoiceGroup = [];
+let editCart = [];
 
 function openEditModalForCustomer(invoiceNo) {
   const targetInvoice = invoices.find(i => i.invoiceNo === invoiceNo);
@@ -1262,7 +1266,6 @@ function closeEditOrderModal() {
   editSelectedSizeOrder = null;
 }
 
-
 async function deleteSale(invoiceNo) {
   if (!confirm(`Delete Invoice #${invoiceNo}? This will restore the stock.`)) return;
 
@@ -1310,12 +1313,14 @@ function exportAllExcel() {
     ["", "", "", "", "", "", "", "", 4000, "", "", ""],
     ["BY ORDER", "Invoice #", "CUSTOMER", "Invoice Date", "PRODUCT", "Tax Rate", "ML", "QTY", "PRICE", "Invoice Total", "PAYMENT", "NOTE"],
   ];
-  invoices.forEach(iv => cData.push([
+  // Sort invoices by invoice number ascending for export
+  const sortedInvoices = [...invoices].sort((a, b) => a.invoiceNo - b.invoiceNo);
+  sortedInvoices.forEach(iv => cData.push([
     iv.by || "", iv.invoiceNo, iv.customer || "", iv.date || "",
     iv.product || "", 0, iv.ml || "", iv.qty || 1,
     iv.price || 0, iv.total || 0, iv.payment || "", iv.note || ""
   ]));
-  const totalAll = invoices.reduce((s, iv) => s + (iv.total || 0), 0);
+  const totalAll = sortedInvoices.reduce((s, iv) => s + (iv.total || 0), 0);
   cData.push(["", "Totals", "", "", "", "", "", "", "", totalAll, "", ""]);
   const cws = XLSX.utils.aoa_to_sheet(cData);
   cws["!cols"] = [{ wch: 14 }, { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 26 }, { wch: 8 }, { wch: 6 }, { wch: 6 }, { wch: 8 }, { wch: 14 }, { wch: 12 }, { wch: 12 }];
