@@ -590,23 +590,22 @@ select.field-input { cursor: pointer; }
 .revenue-chip {
   padding: 8px 16px;
   background: rgba(34,160,90,0.09);
-  color: var(--green);
   border-radius: 40px;
   font-size: 0.78rem;
   font-weight: 500;
   white-space: nowrap;
   border: 1px solid rgba(34,160,90,0.2);
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.revenue-chip span {
-  display: inline-block;
+.revenue-chip .total-amount {
+  color: var(--green);
 }
 
 .revenue-chip .pending-amount {
   color: var(--amber);
-  border-left: 1px solid rgba(201,138,16,0.3);
-  padding-left: 12px;
-  margin-left: 8px;
 }
 
 .table-wrap {
