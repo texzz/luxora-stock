@@ -70,7 +70,11 @@ async function loadDataFromFirebase() {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
       // Sort by date descending (newest first)
-      invoices.sort((a, b) => new Date(b.date) - new Date(a.date));
+      invoices.sort((a, b) => {
+        const dateDiff = new Date(b.date) - new Date(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        return b.invoiceNo - a.invoiceNo;
+      });
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
     } else {
       invoices = defaultInvoices();
@@ -188,7 +192,11 @@ function setupRealtimeListeners() {
       snapshot.forEach(docSnap => {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
-      invoices.sort((a, b) => new Date(b.date) - new Date(a.date));
+      invoices.sort((a, b) => {
+        const dateDiff = new Date(b.date) - new Date(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        return b.invoiceNo - a.invoiceNo;
+      });
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
       renderAll();
     }
@@ -910,7 +918,11 @@ function renderCustomerTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  const sortedInvoices = [...invoices].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sortedInvoices = [...invoices].sort((a, b) => {
+    const dateDiff = new Date(b.date) - new Date(a.date);
+    if (dateDiff !== 0) return dateDiff;
+    return b.invoiceNo - a.invoiceNo;
+  });
 
   const filtered = sortedInvoices.filter(iv => {
     const matchQ = (iv.customer||"").toLowerCase().includes(q) ||
