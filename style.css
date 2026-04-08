@@ -621,10 +621,29 @@ select.field-input { cursor: pointer; }
 .status-badge.low  { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(201,138,16,0.2); }
 .status-badge.out  { background: var(--red-bg); color: var(--red); border: 1px solid rgba(217,79,79,0.2); }
 
-.pay-tag { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 0.62rem; font-weight: 500; white-space: nowrap; }
-.pay-tag.paid     { background: var(--green-bg); color: var(--green); }
-.pay-tag.pending  { background: var(--amber-bg); color: var(--amber); }
-.pay-tag.personal { background: rgba(184,146,42,0.1); color: var(--gold); }
+.pay-tag { 
+  display: inline-block; 
+  padding: 3px 8px; 
+  border-radius: 20px; 
+  font-size: 0.62rem; 
+  font-weight: 500; 
+  white-space: nowrap; 
+}
+.pay-tag.paid { 
+  background: var(--green-bg); 
+  color: var(--green); 
+  border: 1px solid rgba(34,160,90,0.2);
+}
+.pay-tag.pending { 
+  background: var(--amber-bg); 
+  color: var(--amber); 
+  border: 1px solid rgba(201,138,16,0.2);
+}
+.pay-tag.personal { 
+  background: rgba(100, 150, 200, 0.15); 
+  color: #3a6ea5; 
+  border: 1px solid rgba(100,150,200,0.25);
+}
 
 .toast {
   position: fixed; bottom: 24px; right: 20px; padding: 13px 22px;
