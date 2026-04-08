@@ -951,7 +951,7 @@ function renderCustomerTable() {
   }, 0);
   
   const chip = document.getElementById("revChip");
-  if (chip) chip.innerHTML = `Total: ₹${totalRevenue.toLocaleString("en-IN")} | Pending: ₹${pendingRevenue.toLocaleString("en-IN")}`;
+if (chip) chip.innerHTML = `<span class="total-amount">Total: ₹${totalRevenue.toLocaleString("en-IN")}</span> | <span class="pending-amount">Pending: ₹${pendingRevenue.toLocaleString("en-IN")}</span>`;
 
   filtered.forEach((iv, idx) => {
     const dateStr = iv.date
