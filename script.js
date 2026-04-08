@@ -28,6 +28,10 @@ let saleCart = [];
 // Firebase references
 let db, collection, getDocs, doc, setDoc, deleteDoc, addDoc, onSnapshot, query, orderBy;
 
+// Store current filter state for customer list
+let currentMonthFilter = "";
+let currentSearchQuery = "";
+
 /* ── WAIT FOR FIREBASE ── */
 function waitForFirebase() {
   return new Promise((resolve) => {
@@ -69,7 +73,6 @@ async function loadDataFromFirebase() {
       invSnapshot.forEach(docSnap => {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort by invoice number ascending (1 to 95)
       invoices.sort((a, b) => a.invoiceNo - b.invoiceNo);
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
     } else {
@@ -188,12 +191,25 @@ function setupRealtimeListeners() {
       snapshot.forEach(docSnap => {
         invoices.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Sort by invoice number ascending (1 to 95)
       invoices.sort((a, b) => a.invoiceNo - b.invoiceNo);
       nextInvoice = Math.max(...invoices.map(i => i.invoiceNo), 0) + 1;
       renderAll();
+      // Restore filter state after real-time update
+      restoreFilterState();
     }
   });
+}
+
+function restoreFilterState() {
+  const monthFilter = document.getElementById("custMonthFilter");
+  const searchInput = document.getElementById("custSearch");
+  if (monthFilter && currentMonthFilter) {
+    monthFilter.value = currentMonthFilter;
+  }
+  if (searchInput && currentSearchQuery !== undefined) {
+    searchInput.value = currentSearchQuery;
+  }
+  renderCustomerTable();
 }
 
 function renderAll() {
@@ -298,8 +314,8 @@ function defaultInvoices() {
     { by:"TIRTH", invoiceNo:5, customer:"ANKIT", phone:"", date:"2026-01-31", product:"HAWAS ICE / FOREST AQUA", ml:50, qty:1, price:650, total:650, payment:"PAID/SBI", note:""},
     { by:"TIRTH", invoiceNo:6, customer:"BHARAT", phone:"", date:"2026-01-31", product:"MOST WANTED", ml:50, qty:1, price:700, total:700, payment:"PAID/SBI", note:""},
     { by:"TIRTH", invoiceNo:7, customer:"SONU", phone:"", date:"2026-01-31", product:"ARMANI MY WAY", ml:50, qty:1, price:650, total:650, payment:"PAID/SBI", note:""},
-    { by:"OM", invoiceNo:8, customer:"OM", phone:"", date:"2026-01-10", product:"LATAFA YARA", ml:100, qty:1, price:0, total:0, payment:"", note:"PERSONAL"},
-    { by:"NAYAN", invoiceNo:9, customer:"NAYAN", phone:"", date:"2026-01-10", product:"LATAFA YARA", ml:100, qty:1, price:0, total:0, payment:"", note:"PERSONAL"},
+    { by:"OM", invoiceNo:8, customer:"OM", phone:"", date:"2026-01-10", product:"LATAFA YARA", ml:100, qty:1, price:0, total:0, payment:"PERSONAL", note:"PERSONAL"},
+    { by:"NAYAN", invoiceNo:9, customer:"NAYAN", phone:"", date:"2026-01-10", product:"LATAFA YARA", ml:100, qty:1, price:0, total:0, payment:"PERSONAL", note:"PERSONAL"},
     { by:"MUTUAL", invoiceNo:10, customer:"GAUTAM", phone:"", date:"2026-01-10", product:"ARMANI MY WAY / ICONIC WAY", ml:100, qty:1, price:600, total:600, payment:"", note:""},
     { by:"NAYAN", invoiceNo:11, customer:"SWATI", phone:"", date:"2026-01-31", product:"MIX FRUIT", ml:20, qty:1, price:0, total:0, payment:"PAID/SBI", note:"PERSONAL"},
     { by:"MUTUAL", invoiceNo:12, customer:"SUJAL", phone:"", date:"2026-02-12", product:"MOST WANTED", ml:20, qty:1, price:180, total:180, payment:"PAID/SBI", note:""},
@@ -900,18 +916,25 @@ function populateMonthFilter() {
     sel.appendChild(opt);
   });
 
-  const nowYM = new Date().toISOString().slice(0,7);
-  if (months.includes(nowYM)) sel.value = nowYM;
+  // Don't auto-select current month - preserve existing filter
+  if (!currentMonthFilter && !sel.value) {
+    const nowYM = new Date().toISOString().slice(0,7);
+    if (months.includes(nowYM)) sel.value = nowYM;
+  }
 }
 
 function renderCustomerTable() {
   const q = (document.getElementById("custSearch")?.value || "").toLowerCase();
   const month = document.getElementById("custMonthFilter")?.value || "";
+  
+  // Save current filter state
+  currentSearchQuery = q;
+  currentMonthFilter = month;
+  
   const tbody = document.getElementById("custTbody");
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  // Sort invoices by invoice number ascending (1 to 95)
   const sortedInvoices = [...invoices].sort((a, b) => a.invoiceNo - b.invoiceNo);
 
   const filtered = sortedInvoices.filter(iv => {
@@ -932,8 +955,14 @@ function renderCustomerTable() {
       : "—";
 
     const isPersonal = (iv.note||"").includes("PERSONAL") || (iv.payment||"").includes("PERSONAL");
+    const isPaid = iv.payment && (iv.payment.toUpperCase() === "PAID/SBI" || iv.payment.toUpperCase() === "PAID/CASH");
     const isPending = !iv.payment || iv.payment.toUpperCase() === "PENDING";
-    const payClass = isPending ? "pending" : isPersonal ? "personal" : "paid";
+    
+    let payClass = "pending";
+    if (isPersonal) payClass = "personal";
+    else if (isPaid) payClass = "paid";
+    
+    let payText = iv.payment || "PENDING";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -946,7 +975,7 @@ function renderCustomerTable() {
       <td>${iv.qty || "—"}</td>
       <td>₹${(iv.price||0).toLocaleString("en-IN")}</td>
       <td class="col-total">₹${(iv.total||0).toLocaleString("en-IN")}</td>
-      <td><span class="pay-tag ${payClass}">${iv.payment || "PENDING"}</span></td>
+      <td><span class="pay-tag ${payClass}">${payText}</span></td>
       <td style="color:var(--text3);font-size:0.78rem">${iv.note || ""}</td>
       <td style="white-space:nowrap">
         <button class="edit-sale-btn" onclick="openEditModalForCustomer(${iv.invoiceNo})" title="Edit this sale">
@@ -961,7 +990,7 @@ function renderCustomerTable() {
   });
 }
 
-/* ════ EDIT ORDER WITH MULTI-ITEM CART ════ */
+/* ════ EDIT ORDER WITH MULTI-ITEM CART (PRESERVING INVOICE NUMBERS) ════ */
 let editSelectedSizeOrder = null;
 let editingInvoiceGroup = [];
 let editCart = [];
@@ -969,6 +998,10 @@ let editCart = [];
 function openEditModalForCustomer(invoiceNo) {
   const targetInvoice = invoices.find(i => i.invoiceNo === invoiceNo);
   if (!targetInvoice) return;
+
+  // Store current filter values before editing
+  currentMonthFilter = document.getElementById("custMonthFilter")?.value || "";
+  currentSearchQuery = document.getElementById("custSearch")?.value || "";
 
   const allCustomerInvoices = invoices.filter(i => 
     i.customer === targetInvoice.customer && 
@@ -978,6 +1011,7 @@ function openEditModalForCustomer(invoiceNo) {
 
   editingInvoiceGroup = allCustomerInvoices.map(iv => iv.invoiceNo);
   
+  // Preserve original invoice numbers
   editCart = allCustomerInvoices.map(iv => ({
     id: iv.invoiceNo,
     product: iv.product,
@@ -985,7 +1019,7 @@ function openEditModalForCustomer(invoiceNo) {
     qty: iv.qty,
     price: iv.price,
     total: iv.total,
-    invoiceNo: iv.invoiceNo
+    invoiceNo: iv.invoiceNo // Keep original invoice number
   }));
 
   const existing = document.getElementById("editOrderModal");
@@ -1125,7 +1159,8 @@ function addToEditCart() {
     qty,
     price,
     total: qty * price,
-    isNew: true
+    isNew: true,
+    invoiceNo: null // New items will get new invoice numbers
   });
 
   document.getElementById("editFragrance").value = "";
@@ -1217,7 +1252,7 @@ async function saveEditedOrder() {
   // Remove old invoices from local array
   invoices = invoices.filter(i => !editingInvoiceGroup.includes(i.invoiceNo));
 
-  // Create new invoices from edit cart
+  // Create new invoices from edit cart, preserving original invoice numbers for existing items
   let grandTotal = 0;
 
   for (const item of editCart) {
@@ -1236,9 +1271,17 @@ async function saveEditedOrder() {
       await updateFragranceInFirebase(fragIndex);
     }
 
+    // Use original invoice number for existing items, generate new for new items
+    let invoiceNumber;
+    if (item.invoiceNo && !item.isNew) {
+      invoiceNumber = item.invoiceNo; // Preserve original invoice number
+    } else {
+      invoiceNumber = nextInvoice++;
+    }
+
     const newInv = {
       by: newBy,
-      invoiceNo: nextInvoice++,
+      invoiceNo: invoiceNumber,
       customer: newCustomer,
       phone: newPhone,
       date: newDate,
@@ -1256,12 +1299,17 @@ async function saveEditedOrder() {
 
   showToast(`Order updated — ${editCart.length} item(s) — ₹${grandTotal.toLocaleString("en-IN")}`, "success");
   closeEditOrderModal();
+  
+  // Restore filter state after save
+  setTimeout(() => {
+    restoreFilterState();
+  }, 500);
 }
 
 function closeEditOrderModal() {
   const modal = document.getElementById("editOrderModal");
   if (modal) modal.remove();
-  editingInvoiceGroup = null;
+  editingInvoiceGroup = [];
   editCart = [];
   editSelectedSizeOrder = null;
 }
@@ -1313,7 +1361,6 @@ function exportAllExcel() {
     ["", "", "", "", "", "", "", "", 4000, "", "", ""],
     ["BY ORDER", "Invoice #", "CUSTOMER", "Invoice Date", "PRODUCT", "Tax Rate", "ML", "QTY", "PRICE", "Invoice Total", "PAYMENT", "NOTE"],
   ];
-  // Sort invoices by invoice number ascending for export
   const sortedInvoices = [...invoices].sort((a, b) => a.invoiceNo - b.invoiceNo);
   sortedInvoices.forEach(iv => cData.push([
     iv.by || "", iv.invoiceNo, iv.customer || "", iv.date || "",
