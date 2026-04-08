@@ -297,7 +297,7 @@ function defaultFragrances() {
     { name:"MOST WANTED",     ml20:4,ml30:0,ml50:1,ml100:1 },
     { name:"YARA",            ml20:2,ml30:2,ml50:1,ml100:1 },
     { name:"LACOSTE",         ml20:0,ml30:0,ml50:0,ml100:1 },
-    { name:"CREED AVENTUS",   ml20:2,ml30:1,ml50:0,ml100:0 },
+    { name:"CREED AVENTUS",   ml20:2,ml30:2,ml50:0,ml100:0 },
     { name:"PURPLE MUSK",     ml20:0,ml30:0,ml50:0,ml100:0 },
     { name:"GULAB",           ml20:0,ml30:0,ml50:0,ml100:0 },
     { name:"MOGRA",           ml20:0,ml30:0,ml50:0,ml100:0 },
@@ -916,7 +916,6 @@ function populateMonthFilter() {
     sel.appendChild(opt);
   });
 
-  // Don't auto-select current month - preserve existing filter
   if (!currentMonthFilter && !sel.value) {
     const nowYM = new Date().toISOString().slice(0,7);
     if (months.includes(nowYM)) sel.value = nowYM;
@@ -946,8 +945,13 @@ function renderCustomerTable() {
   });
 
   const totalRevenue = filtered.reduce((s,iv) => s + (iv.total||0), 0);
+  const pendingRevenue = filtered.reduce((s,iv) => {
+    const isPending = !iv.payment || iv.payment.toUpperCase() === "PENDING";
+    return s + (isPending ? (iv.total||0) : 0);
+  }, 0);
+  
   const chip = document.getElementById("revChip");
-  if (chip) chip.textContent = "Total: ₹" + totalRevenue.toLocaleString("en-IN");
+  if (chip) chip.innerHTML = `Total: ₹${totalRevenue.toLocaleString("en-IN")} | Pending: ₹${pendingRevenue.toLocaleString("en-IN")}`;
 
   filtered.forEach((iv, idx) => {
     const dateStr = iv.date
