@@ -297,7 +297,7 @@ function defaultFragrances() {
     { name:"MOST WANTED",     ml20:4,ml30:0,ml50:1,ml100:1 },
     { name:"YARA",            ml20:2,ml30:2,ml50:1,ml100:1 },
     { name:"LACOSTE",         ml20:0,ml30:0,ml50:0,ml100:1 },
-    { name:"CREED AVENTUS",   ml20:2,ml30:2,ml50:0,ml100:0 },
+    { name:"CREED AVENTUS",   ml20:2,ml30:1,ml50:0,ml100:0 },
     { name:"PURPLE MUSK",     ml20:0,ml30:0,ml50:0,ml100:0 },
     { name:"GULAB",           ml20:0,ml30:0,ml50:0,ml100:0 },
     { name:"MOGRA",           ml20:0,ml30:0,ml50:0,ml100:0 },
