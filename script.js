@@ -910,7 +910,9 @@ function renderCustomerTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  const sortedInvoices = [...invoices].sort((a, b) => b.invoiceNo - a.invoiceNo);
+  const sortedInvoices = [...invoices].sort((a, b) =>
+  (a.customer || "").localeCompare(b.customer || "")
+);
 
   const filtered = sortedInvoices.filter(iv => {
     const matchQ = (iv.customer||"").toLowerCase().includes(q) ||
