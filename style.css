@@ -1288,9 +1288,10 @@ textarea.field-input {
   border-bottom: 1px solid rgba(210,195,175,0.3);
 }
 .date-picker-month {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 500;
+  font-family: var(--font-sans);   /* Agraham has no digits → use system for "October 2026" */
+  font-style: normal;
+  font-size: 1.05rem;
+  font-weight: 600;
   color: var(--gold);
   letter-spacing: 0.02em;
   text-align: center;
